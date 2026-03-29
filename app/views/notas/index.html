@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dicionário de Configuração das Notas{% endblock %}
+
+{% block content %}
+<div class="semantic-guide-container">
+    
+    <div style="background-color: var(--hover-color); padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; border-left: 5px solid var(--primary-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h4 style="margin: 0; color: var(--primary-color); font-size: 1.1em;">Procurando registrar a rotina de um paciente?</h4>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em; color: var(--muted-color);">Para registrar a evolução diária, use o Diário.</p>
+        </div>
+        <a href="/lancamentos/novo" class="btn-primary" style="white-space: nowrap;">📝 Ir para Diário / Lançamentos</a>
+    </div>
+
+    <div class="actions-bar" style="margin-bottom: 20px;">
+        <a href="/notas/novo" class="btn-primary">+ Adicionar Nova Regra de Nota</a>
+    </div>
+
+    <div class="notes-grid">
+        <div class="notes-block theme-atividade-border">
+            <h3 class="atividade-text">Notas para Atividades</h3>
+            <ul class="semantic-list">
+                {% for nota in notas_atividade %}
+                <li style="justify-content: space-between; display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="note-value badge-atividade">{{ nota.valor }}</span>
+                        <span class="note-desc">{{ nota.descricao }}</span>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="/notas/editar/{{ nota.id }}" class="btn-icon">✏️</a>
+                        <form action="/notas/excluir/{{ nota.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Excluir esta regra de nota?');">
+                            <button type="submit" class="btn-icon btn-danger" style="padding: 2px 6px;">🗑️</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="notes-block theme-intercorrencia-border">
+            <h3 class="intercorrencia-text">Notas para Intercorrências</h3>
+            <ul class="semantic-list">
+                {% for nota in notas_intercorrencia %}
+                <li style="justify-content: space-between; display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="note-value badge-intercorrencia">{{ nota.valor }}</span>
+                        <span class="note-desc">{{ nota.descricao }}</span>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="/notas/editar/{{ nota.id }}" class="btn-icon">✏️</a>
+                        <form action="/notas/excluir/{{ nota.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Excluir esta regra de nota?');">
+                            <button type="submit" class="btn-icon btn-danger" style="padding: 2px 6px;">🗑️</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

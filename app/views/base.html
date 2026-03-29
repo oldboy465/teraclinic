@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERA - Acompanhamento Terapêutico</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="layout-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>TERA <span>Clinic</span></h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/dashboard">📊 Dashboard</a></li>
+                    <li><a href="/alunos">👦 Alunos</a></li>
+                    <li><a href="/professores">👩‍🏫 Terapeutas</a></li>
+                    <li><a href="/atividades">🧩 Atividades</a></li>
+                    <li><a href="/intercorrencias">⚠️ Intercorrências</a></li>
+                    
+                    <li><a href="/lancamentos/novo">📝 Diário / Lançamentos</a></li>
+                    <li><a href="/notas">📖 Dicionário de Notas</a></li>
+                    
+                    <li><a href="/logout" style="color: var(--danger-color); margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">🚪 Sair do Sistema</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="themeToggle" class="btn-theme-toggle">🌙 Modo Escuro</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <h1>{% block page_title %}Página Inicial{% endblock %}</h1>
+            </header>
+            
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/validations.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

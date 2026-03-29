@@ -1,0 +1,62 @@
+# app/models/lancamento.py
+from database import get_db
+
+class Lancamento:
+    """
+    Classe Model para gerenciar os Lançamentos diários (Atividades e Intercorrências dos alunos).
+    """
+
+    @staticmethod
+    def create_table():
+        """Garante que a tabela de lançamentos exista no banco de dados."""
+        conn = get_db()
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS lancamentos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                aluno_id INTEGER NOT NULL,
+                professor_id INTEGER NOT NULL,
+                atividade_id INTEGER,
+                nota_atividade INTEGER,
+                intercorrencia_id INTEGER,
+                nota_intercorrencia INTEGER,
+                data_lancamento DATE NOT NULL,
+                FOREIGN KEY (aluno_id) REFERENCES alunos (id) ON DELETE CASCADE,
+                FOREIGN KEY (professor_id) REFERENCES professores (id) ON DELETE CASCADE,
+                FOREIGN KEY (atividade_id) REFERENCES atividades (id) ON DELETE SET NULL,
+                FOREIGN KEY (intercorrencia_id) REFERENCES intercorrencias (id) ON DELETE SET NULL
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def get_all():
+        """Busca os lançamentos unindo os nomes de alunos, professores, atividades e intercorrências."""
+        conn = get_db()
+        # Inicializa a tabela caso seja a primeira vez rodando o model
+        Lancamento.create_table() 
+        
+        query = '''
+            SELECT l.*, a.nome as aluno_nome, p.nome_completo as professor_nome,
+                   act.sigla as atividade_sigla, intc.sigla as intercorrencia_sigla
+            FROM lancamentos l
+            JOIN alunos a ON l.aluno_id = a.id
+            JOIN professores p ON l.professor_id = p.id
+            LEFT JOIN atividades act ON l.atividade_id = act.id
+            LEFT JOIN intercorrencias intc ON l.intercorrencia_id = intc.id
+            ORDER BY l.data_lancamento DESC, l.id DESC
+        '''
+        lancamentos = conn.execute(query).fetchall()
+        conn.close()
+        return lancamentos
+
+    @staticmethod
+    def create(aluno_id, professor_id, data_lancamento, atividade_id=None, nota_atividade=None, intercorrencia_id=None, nota_intercorrencia=None):
+        conn = get_db()
+        Lancamento.create_table()
+        conn.execute('''
+            INSERT INTO lancamentos (aluno_id, professor_id, atividade_id, nota_atividade, intercorrencia_id, nota_intercorrencia, data_lancamento)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (aluno_id, professor_id, atividade_id, nota_atividade, intercorrencia_id, nota_intercorrencia, data_lancamento))
+        conn.commit()
+        conn.close()

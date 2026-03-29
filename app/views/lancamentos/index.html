@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Configuração Semântica - Modo Estrutural{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="system-alert info-alert">
+        <h3>🔒 Edição Protegida por Regra de Negócio</h3>
+        <p>
+            De acordo com os requisitos estruturais do <strong>SISTEMA TERA</strong> (Módulo 5), as descrições semânticas das notas são blocos independentes e padronizados para garantir a consistência dos relatórios clínicos.
+        </p>
+        <p>
+            Para alterar a escala de 0 a 10, o Administrador do Sistema deve modificar diretamente o arquivo de núcleo: <code>app/models/nota.py</code>.
+        </p>
+    </div>
+    <div class="form-actions" style="margin-top: 20px;">
+        <a href="/notas" class="btn-primary">Voltar ao Guia de Notas</a>
+    </div>
+</div>
+{% endblock %}

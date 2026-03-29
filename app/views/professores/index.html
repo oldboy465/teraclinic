@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Gestão de Terapeutas e Professores{% endblock %}
+
+{% block content %}
+<div class="actions-bar">
+    <a href="/professores/novo" class="btn-primary">+ Novo Terapeuta</a>
+</div>
+
+<div class="table-container">
+    <table class="table-clean">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Foto</th>
+                <th>Nome Completo</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prof in professores %}
+            <tr>
+                <td>{{ prof.id }}</td>
+                <td>
+                    {% if prof.foto %}
+                        <img src="{{ url_for('static', filename='uploads/' + prof.foto) }}" alt="Foto de {{ prof.nome_completo }}" class="avatar-mini">
+                    {% else %}
+                        <span class="avatar-placeholder">👤</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ prof.nome_completo }}</strong></td>
+                <td class="telefone-mask">{{ prof.telefone or 'Não informado' }}</td>
+                <td>{{ prof.email or 'Não informado' }}</td>
+                <td class="action-buttons">
+                    <a href="/professores/editar/{{ prof.id }}" class="btn-icon">✏️ Editar</a>
+                    
+                    <form action="/professores/excluir/{{ prof.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir o terapeuta {{ prof.nome_completo }}?');">
+                        <button type="submit" class="btn-icon btn-danger">🗑️ Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">Nenhum terapeuta cadastrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

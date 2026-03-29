@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Registrar Novo Lançamento{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <form action="/lancamentos/novo" method="POST" class="form-grid">
+        
+        <div class="form-group">
+            <label for="data_lancamento">Data do Registro *</label>
+            <input type="date" id="data_lancamento" name="data_lancamento" required class="input-suave">
+        </div>
+
+        <div class="form-group">
+            <label for="aluno_id">Aluno *</label>
+            <select id="aluno_id" name="aluno_id" required class="input-suave">
+                <option value="">Selecione o Aluno</option>
+                {% for aluno in alunos %}
+                    <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="professor_id">Terapeuta/Professor Aplicador *</label>
+            <select id="professor_id" name="professor_id" required class="input-suave">
+                <option value="">Selecione o Terapeuta</option>
+                {% for prof in professores %}
+                    <option value="{{ prof.id }}">{{ prof.nome_completo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="notes-block theme-atividade-border full-width">
+            <h3 class="atividade-text">Registro de Atividade (Opcional)</h3>
+            <div class="form-group full-width">
+                <select id="atividade_id" name="atividade_id" class="input-suave">
+                    <option value="">Nenhuma atividade registrada</option>
+                    {% for atv in atividades %}
+                        <option value="{{ atv.id }}">{{ atv.sigla }} - {{ atv.descricao }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label for="nota_atividade">Nota Semântica da Atividade (0 a 10)</label>
+                <select id="nota_atividade" name="nota_atividade" class="input-suave">
+                    <option value="">Sem nota</option>
+                    {% for valor, desc in notas_atv.items() %}
+                        <option value="{{ valor }}">{{ valor }} - {{ desc }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="notes-block theme-intercorrencia-border full-width">
+            <h3 class="intercorrencia-text">Registro de Intercorrência (Opcional)</h3>
+            <div class="form-group full-width">
+                <select id="intercorrencia_id" name="intercorrencia_id" class="input-suave">
+                    <option value="">Nenhuma intercorrência registrada</option>
+                    {% for intc in intercorrencias %}
+                        <option value="{{ intc.id }}">{{ intc.sigla }} - {{ intc.descricao }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label for="nota_intercorrencia">Intensidade da Intercorrência (0 a 10)</label>
+                <select id="nota_intercorrencia" name="nota_intercorrencia" class="input-suave">
+                    <option value="">Sem nota</option>
+                    {% for valor, desc in notas_int.items() %}
+                        <option value="{{ valor }}">{{ valor }} - {{ desc }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions full-width">
+            <a href="/lancamentos" class="btn-secondary">Cancelar</a>
+            <button type="submit" class="btn-primary">Salvar Lançamento</button>
+        </div>
+    </form>
+</div>
+<script>document.getElementById('data_lancamento').valueAsDate = new Date();</script>
+{% endblock %}

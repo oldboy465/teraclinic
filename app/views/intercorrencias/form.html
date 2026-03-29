@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ 'Editar Intercorrência' if intercorrencia else 'Nova Intercorrência' }}{% endblock %}
+
+{% block content %}
+<div class="form-container theme-intercorrencia-border">
+    <form action="{{ '/intercorrencias/editar/' ~ intercorrencia.id if intercorrencia else '/intercorrencias/novo' }}" method="POST" class="form-grid">
+        
+        <div class="form-group">
+            <label for="sigla">Sigla (Ex: CRISE-SENSORIAL) *</label>
+            <input type="text" id="sigla" name="sigla" value="{{ intercorrencia.sigla if intercorrencia else '' }}" required maxlength="20" class="input-suave text-uppercase">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="descricao">Descrição da Intercorrência *</label>
+            <input type="text" id="descricao" name="descricao" value="{{ intercorrencia.descricao if intercorrencia else '' }}" required class="input-suave">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="informacoes_adicionais">Plano de Manejo / Como agir / Informações</label>
+            <textarea id="informacoes_adicionais" name="informacoes_adicionais" rows="4" class="input-suave">{{ intercorrencia.informacoes_adicionais if intercorrencia else '' }}</textarea>
+        </div>
+
+        <div class="form-actions full-width">
+            <a href="/intercorrencias" class="btn-secondary">Cancelar</a>
+            <button type="submit" class="btn-primary intercorrencia-btn">Salvar Intercorrência</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

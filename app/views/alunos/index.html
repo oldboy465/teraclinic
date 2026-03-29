@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Gestão de Alunos{% endblock %}
+
+{% block content %}
+<div class="actions-bar">
+    <a href="/alunos/novo" class="btn-primary">+ Novo Aluno</a>
+</div>
+
+<div class="table-container">
+    <table class="table-clean">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Terapeuta</th>
+                <th>Data Nasc.</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aluno in alunos %}
+            <tr>
+                <td>{{ aluno.id }}</td>
+                <td><strong>{{ aluno.nome }}</strong></td>
+                <td>{{ aluno.terapeuta_nome or 'Não atribuído' }}</td>
+                <td>{{ aluno.data_nascimento }}</td>
+                <td class="action-buttons">
+                    <a href="/relatorios/aluno/{{ aluno.id }}" class="btn-icon">📄 Relatório</a>
+                    <a href="/alunos/editar/{{ aluno.id }}" class="btn-icon">✏️ Editar</a>
+                    
+                    <form action="/alunos/excluir/{{ aluno.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir o aluno {{ aluno.nome }}?');">
+                        <button type="submit" class="btn-icon btn-danger">🗑️ Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">Nenhum aluno cadastrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

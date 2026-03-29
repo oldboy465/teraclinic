@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Clínico - {{ aluno.nome }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 40px; }
+        .header { text-align: center; border-bottom: 2px solid #5a8dee; padding-bottom: 10px; margin-bottom: 30px; }
+        .info-panel { background-color: #f2f5fc; padding: 15px; border-radius: 8px; margin-bottom: 30px; }
+        .info-panel p { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
+        th { background-color: #e9ecef; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-atv { background-color: #d7f5eb; color: #0d825f; }
+        .badge-intc { background-color: #ffe5d0; color: #c45500; }
+        .export-btn { display: block; width: 200px; padding: 10px; background: #25D366; color: white; text-align: center; text-decoration: none; border-radius: 5px; margin: 20px auto; font-weight: bold; font-family: sans-serif; cursor: pointer; border: none;}
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <a href="?format=pdf" style="margin-right: 15px; color: #5a8dee;">⬇️ Baixar PDF</a>
+        <button id="btnCopiarZap" class="export-btn" onclick="copiarParaWhatsApp()">Cópia para WhatsApp</button>
+    </div>
+
+    <div class="header">
+        <h1>Sistema TERA - Relatório Clínico</h1>
+        <p>Acompanhamento Terapêutico Especializado</p>
+    </div>
+
+    <div class="info-panel">
+        <p><strong>Paciente/Aluno:</strong> {{ aluno.nome }}</p>
+        <p><strong>Data de Nascimento:</strong> {{ aluno.data_nascimento }}</p>
+        <p><strong>Preferências:</strong> {{ aluno.preferencias or 'N/A' }}</p>
+        <p><strong>Gatilhos/Evitáveis:</strong> {{ aluno.evitaveis or 'N/A' }}</p>
+    </div>
+
+    <h2>Interpretação de Resultados e Histórico</h2>
+    <p>Abaixo consta o histórico cronológico de intervenções e intercorrências registradas pelas equipes terapêuticas.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Terapeuta</th>
+                <th>Registro de Atividade</th>
+                <th>Registro de Intercorrência</th>
+            </tr>
+        </thead>
+        <tbody id="dadosRelatorio">
+            {% for l in lancamentos %}
+            <tr>
+                <td>{{ l.data_lancamento }}</td>
+                <td>{{ l.professor_nome }}</td>
+                <td>
+                    {% if l.atividade_id %}
+                        <span class="badge badge-atv">{{ l.atividade_sigla }}</span> (Nota: {{ l.nota_atividade }})
+                    {% else %} - {% endif %}
+                </td>
+                <td>
+                    {% if l.intercorrencia_id %}
+                        <span class="badge badge-intc">{{ l.intercorrencia_sigla }}</span> (Nota: {{ l.nota_intercorrencia }})
+                    {% else %} - {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script src="{{ url_for('static', filename='js/export.js') }}"></script>
+</body>
+</html>

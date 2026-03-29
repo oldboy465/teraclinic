@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ 'Editar Atividade' if atividade else 'Nova Atividade' }}{% endblock %}
+
+{% block content %}
+<div class="form-container theme-atividade-border">
+    <form action="{{ '/atividades/editar/' ~ atividade.id if atividade else '/atividades/novo' }}" method="POST" class="form-grid">
+        
+        <div class="form-group">
+            <label for="sigla">Sigla (Ex: REC-VISUAL) *</label>
+            <input type="text" id="sigla" name="sigla" value="{{ atividade.sigla if atividade else '' }}" required maxlength="20" class="input-suave text-uppercase">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="descricao">Descrição da Atividade *</label>
+            <input type="text" id="descricao" name="descricao" value="{{ atividade.descricao if atividade else '' }}" required class="input-suave">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="informacoes_adicionais">Informações Adicionais / Protocolo de Aplicação</label>
+            <textarea id="informacoes_adicionais" name="informacoes_adicionais" rows="4" class="input-suave">{{ atividade.informacoes_adicionais if atividade else '' }}</textarea>
+        </div>
+
+        <div class="form-actions full-width">
+            <a href="/atividades" class="btn-secondary">Cancelar</a>
+            <button type="submit" class="btn-primary atividade-btn">Salvar Atividade</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

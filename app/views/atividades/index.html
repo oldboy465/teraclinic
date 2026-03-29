@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Catálogo de Atividades{% endblock %}
+
+{% block content %}
+<div class="actions-bar">
+    <a href="/atividades/novo" class="btn-primary atividade-btn">+ Nova Atividade</a>
+</div>
+
+<div class="table-container">
+    <table class="table-clean theme-atividade">
+        <thead>
+            <tr>
+                <th>Sigla</th>
+                <th>Descrição</th>
+                <th>Informações Adicionais</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atv in atividades %}
+            <tr>
+                <td><span class="badge badge-atividade">{{ atv.sigla }}</span></td>
+                <td><strong>{{ atv.descricao }}</strong></td>
+                <td>{{ atv.informacoes_adicionais }}</td>
+                <td class="action-buttons">
+                    <a href="/atividades/editar/{{ atv.id }}" class="btn-icon">✏️ Editar</a>
+                    <form action="/atividades/excluir/{{ atv.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Excluir a atividade {{ atv.sigla }}?');">
+                        <button type="submit" class="btn-icon btn-danger">🗑️ Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">Nenhuma atividade cadastrada no catálogo.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

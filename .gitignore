@@ -1,0 +1,15 @@
+# Banco de Dados
+app/tera_database.db
+
+# Arquivos compilados do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Uploads de usuários (mantém a pasta, mas ignora as fotos reais)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Ambientes virtuais (caso venha a usar no futuro)
+venv/
+env/

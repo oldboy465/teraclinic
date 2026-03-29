@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ 'Editar Regra de Nota' if nota else 'Nova Regra de Nota' }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <form action="{{ url_for('nota_bp.edit', id=nota.id) if nota else url_for('nota_bp.create') }}" method="POST" class="form-grid">
+        
+        <div class="form-group">
+            <label for="tipo">Tipo de Nota *</label>
+            <select id="tipo" name="tipo" required class="input-suave">
+                <option value="atividade" {% if nota and nota.tipo == 'atividade' %}selected{% endif %}>Atividade (Suporte)</option>
+                <option value="intercorrencia" {% if nota and nota.tipo == 'intercorrencia' %}selected{% endif %}>Intercorrência (Intensidade)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="valor">Valor da Nota (Ex: 0, 2, 4, 8, 10) *</label>
+            <input type="number" id="valor" name="valor" value="{{ nota.valor if nota else '' }}" min="0" max="100" required class="input-suave">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="descricao">Significado Semântico (Descrição) *</label>
+            <textarea id="descricao" name="descricao" rows="3" required class="input-suave" placeholder="Ex: Realizou com total independência">{{ nota.descricao if nota else '' }}</textarea>
+        </div>
+
+        <div class="form-actions full-width">
+            <a href="/notas" class="btn-secondary">Cancelar</a>
+            <button type="submit" class="btn-primary">Salvar Regra</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

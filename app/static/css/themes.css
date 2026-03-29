@@ -1,0 +1,41 @@
+/* app/static/css/themes.css */
+
+/* TONS PASTÉIS E MODO CLARO (Padrão) */
+:root {
+    --bg-color: #f7f9fc;
+    --sidebar-bg: #ffffff;
+    --text-color: #333333;
+    --muted-color: #777777;
+    --border-color: #e2e8f0;
+    --hover-color: #edf2f7;
+    --input-bg: #ffffff;
+    
+    /* Cores Globais */
+    --primary-color: #8da4d0; /* Azul suave */
+    --danger-color: #e5989b;  /* Vermelho/Rosado suave */
+    
+    /* Identidade Atividades (Azul/Verde Pastel) */
+    --atv-light: #d1e8e2; 
+    --atv-dark: #3a8570;
+
+    /* Identidade Intercorrências (Laranja/Pêssego Pastel) */
+    --int-light: #ffe5d9;
+    --int-dark: #cc5c39;
+}
+
+/* MODO ESCURO */
+[data-theme="dark"] {
+    --bg-color: #1a202c;
+    --sidebar-bg: #2d3748;
+    --text-color: #e2e8f0;
+    --muted-color: #a0aec0;
+    --border-color: #4a5568;
+    --hover-color: #4a5568;
+    --input-bg: #2d3748;
+    
+    --primary-color: #a3bffa; 
+    --atv-light: #234e42;
+    --atv-dark: #68d391;
+    --int-light: #6b301c;
+    --int-dark: #f6ad55;
+}

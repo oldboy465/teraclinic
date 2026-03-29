@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Catálogo de Intercorrências{% endblock %}
+
+{% block content %}
+<div class="actions-bar">
+    <a href="/intercorrencias/novo" class="btn-primary intercorrencia-btn">+ Nova Intercorrência</a>
+</div>
+
+<div class="table-container">
+    <table class="table-clean theme-intercorrencia">
+        <thead>
+            <tr>
+                <th>Sigla</th>
+                <th>Descrição</th>
+                <th>Detalhes de Manejo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for intc in intercorrencias %}
+            <tr>
+                <td><span class="badge badge-intercorrencia">{{ intc.sigla }}</span></td>
+                <td><strong>{{ intc.descricao }}</strong></td>
+                <td>{{ intc.informacoes_adicionais }}</td>
+                <td class="action-buttons">
+                    <a href="/intercorrencias/editar/{{ intc.id }}" class="btn-icon">✏️ Editar</a>
+                    <form action="/intercorrencias/excluir/{{ intc.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Excluir a intercorrência {{ intc.sigla }}?');">
+                        <button type="submit" class="btn-icon btn-danger">🗑️ Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">Nenhuma intercorrência cadastrada no catálogo.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

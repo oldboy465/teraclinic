@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TERA Acompanhamento</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Estilos específicos apenas para a tela de Login isolada */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--hover-color); /* Fundo um pouco mais escuro para destacar o card */
+        }
+        .login-card {
+            background-color: var(--sidebar-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border-top: 5px solid var(--primary-color);
+        }
+        .login-header h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-weight: 300;
+        }
+        .login-header h1 span {
+            font-weight: 700;
+        }
+        .login-header p {
+            color: var(--muted-color);
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        .error-msg {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <h1>TERA <span>Clinic</span></h1>
+            <p>Acesso Restrito ao Sistema</p>
+        </div>
+
+        {% if erro %}
+            <div class="error-msg">{{ erro }}</div>
+        {% endif %}
+
+        <form action="{{ url_for('auth_bp.login') }}" method="POST">
+            <div class="form-group" style="text-align: left; margin-bottom: 15px;">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" name="username" required class="input-suave" placeholder="Digite seu usuário" autofocus>
+            </div>
+            
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" required class="input-suave" placeholder="Digite sua senha">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em;">Entrar no Sistema</button>
+        </form>
+    </div>
+
+</body>
+</html>
