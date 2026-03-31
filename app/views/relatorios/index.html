@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Gerador de Relatórios Analíticos{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="system-alert info-alert" style="background-color: var(--hover-color); padding: 15px; border-left: 4px solid var(--primary-color); border-radius: 8px; margin-bottom: 25px;">
+        <p>💡 <strong>Dica:</strong> Se você não preencher nenhum filtro, o sistema gerará um relatório geral com todos os dados lançados até o momento.</p>
+    </div>
+
+    <form action="/relatorios/gerar" method="GET" class="form-grid">
+        
+        <div class="form-group">
+            <label for="data_inicio">Data Inicial</label>
+            <input type="date" id="data_inicio" name="data_inicio" class="input-suave">
+        </div>
+
+        <div class="form-group">
+            <label for="data_fim">Data Final</label>
+            <input type="date" id="data_fim" name="data_fim" class="input-suave">
+        </div>
+
+        <div class="form-group">
+            <label for="aluno_id">Filtrar por Aluno</label>
+            <select id="aluno_id" name="aluno_id" class="input-suave">
+                <option value="">Todos os Alunos</option>
+                {% for aluno in alunos %}
+                    <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="professor_id">Filtrar por Terapeuta/Professor</label>
+            <select id="professor_id" name="professor_id" class="input-suave">
+                <option value="">Todos os Terapeutas</option>
+                {% for prof in professores %}
+                    <option value="{{ prof.id }}">{{ prof.nome_completo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="atividade_id">Filtrar por Atividade Específica</label>
+            <select id="atividade_id" name="atividade_id" class="input-suave">
+                <option value="">Todas as Atividades</option>
+                {% for atv in atividades %}
+                    <option value="{{ atv.id }}">{{ atv.sigla }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="intercorrencia_id">Filtrar por Intercorrência</label>
+            <select id="intercorrencia_id" name="intercorrencia_id" class="input-suave">
+                <option value="">Todas as Intercorrências</option>
+                {% for intc in intercorrencias %}
+                    <option value="{{ intc.id }}">{{ intc.sigla }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group full-width" style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 10px;">
+            <label style="font-size: 1.1em; color: var(--primary-color);">Configuração do Gráfico</label>
+            <div style="display: flex; gap: 20px; margin-top: 10px;">
+                <label style="font-weight: normal; cursor: pointer;">
+                    <input type="radio" name="tipo_grafico" value="separado" checked> 
+                    <strong>Linhas Separadas</strong> (Exibe cada atividade e intercorrência individualmente)
+                </label>
+                <label style="font-weight: normal; cursor: pointer;">
+                    <input type="radio" name="tipo_grafico" value="somatorio"> 
+                    <strong>Somatório Diário</strong> (Soma a pontuação total do dia)
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions full-width" style="margin-top: 20px;">
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1em;">📊 Processar e Gerar Relatório</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

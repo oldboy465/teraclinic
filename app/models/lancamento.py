@@ -60,3 +60,60 @@ class Lancamento:
         ''', (aluno_id, professor_id, atividade_id, nota_atividade, intercorrencia_id, nota_intercorrencia, data_lancamento))
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def get_relatorio_avancado(filtros):
+        """
+        Busca lançamentos aplicando múltiplos filtros dinâmicos.
+        Retorna os dados brutos para processamento de gráficos e tabelas.
+        """
+        conn = get_db()
+        Lancamento.create_table()
+        
+        # O WHERE 1=1 é um truque clássico para facilitar a concatenação dinâmica dos filtros com AND
+        query = '''
+            SELECT l.*, 
+                   a.nome as aluno_nome, 
+                   p.nome_completo as professor_nome,
+                   act.sigla as atividade_sigla, 
+                   intc.sigla as intercorrencia_sigla
+            FROM lancamentos l
+            JOIN alunos a ON l.aluno_id = a.id
+            JOIN professores p ON l.professor_id = p.id
+            LEFT JOIN atividades act ON l.atividade_id = act.id
+            LEFT JOIN intercorrencias intc ON l.intercorrencia_id = intc.id
+            WHERE 1=1
+        '''
+        params = []
+
+        # Adiciona dinamicamente os parâmetros recebidos
+        if filtros.get('data_inicio'):
+            query += ' AND l.data_lancamento >= ?'
+            params.append(filtros['data_inicio'])
+            
+        if filtros.get('data_fim'):
+            query += ' AND l.data_lancamento <= ?'
+            params.append(filtros['data_fim'])
+
+        if filtros.get('aluno_id'):
+            query += ' AND l.aluno_id = ?'
+            params.append(filtros['aluno_id'])
+
+        if filtros.get('professor_id'):
+            query += ' AND l.professor_id = ?'
+            params.append(filtros['professor_id'])
+
+        if filtros.get('atividade_id'):
+            query += ' AND l.atividade_id = ?'
+            params.append(filtros['atividade_id'])
+
+        if filtros.get('intercorrencia_id'):
+            query += ' AND l.intercorrencia_id = ?'
+            params.append(filtros['intercorrencia_id'])
+
+        # Para os gráficos, é fundamental que a ordem seja cronológica (ASC)
+        query += ' ORDER BY l.data_lancamento ASC, l.id ASC'
+        
+        lancamentos = conn.execute(query, params).fetchall()
+        conn.close()
+        return lancamentos
