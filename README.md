@@ -1,35 +1,35 @@
 # 🌳 TERA Clinic - Sistema de Acompanhamento Terapêutico
 
-[cite_start]O **TERA Clinic** é uma plataforma robusta de gestão clínica e acompanhamento terapêutico, projetada para transformar registros qualitativos de sessões em dados analíticos precisos. [cite_start]O sistema atende profissionais que buscam monitorar a evolução de pacientes através de métricas de desempenho em atividades e controle de intercorrências[cite: 12, 13].
+O **TERA Clinic** é uma plataforma robusta de gestão clínica e acompanhamento terapêutico, projetada para transformar registros qualitativos de sessões em dados analíticos precisos. O sistema atende profissionais que buscam monitorar a evolução de pacientes através de métricas de desempenho em atividades e controle de intercorrências.
 
 ## 🚀 Funcionalidades Principais
 
-* [cite_start]**Painel Analítico (Dashboard)**: Visualização em tempo real de métricas globais, incluindo total de alunos, média de notas em atividades e intensidade de intercorrências.
-* [cite_start]**Gestão 360°**: Módulos completos para cadastro e edição de Alunos, Terapeutas, Atividades e protocolos de Intercorrências.
-* [cite_start]**Diário de Lançamentos**: Registro simplificado de sessões com seleção de níveis de suporte (notas de 0 a 10) para cada intervenção[cite: 11, 13].
+* **Painel Analítico (Dashboard)**: Visualização em tempo real de métricas globais, incluindo total de alunos, média de notas em atividades e intensidade de intercorrências.
+* **Gestão 360°**: Módulos completos para cadastro e edição de Alunos, Terapeutas, Atividades e protocolos de Intercorrências.
+* **Diário de Lançamentos**: Registro simplificado de sessões com seleção de níveis de suporte (notas de 0 a 10) para cada intervenção.
 * **Relatórios Analíticos Avançados**:
-    * [cite_start]Filtros dinâmicos por período, aluno, professor ou atividade.
-    * [cite_start]Gráficos de linhas de alta precisão (sem suavização) com cores exclusivas por atividade.
-    * [cite_start]Exportação nativa para **PDF** em orientação paisagem.
-    * [cite_start]Resumo estruturado para cópia e envio via **WhatsApp**.
-* [cite_start]**Dicionário Semântico**: Personalização total do significado das notas de suporte e crise, adaptando-se ao protocolo de cada clínica[cite: 11, 13].
+    * Filtros dinâmicos por período, aluno, professor ou atividade.
+    * Gráficos de linhas de alta precisão (sem suavização) com cores exclusivas por atividade.
+    * Exportação nativa para **PDF** em orientação paisagem.
+    * Resumo estruturado para cópia e envio via **WhatsApp**.
+* **Dicionário Semântico**: Personalização total do significado das notas de suporte e crise, adaptando-se ao protocolo de cada clínica.
 
 ## 🛠️ Tecnologias Utilizadas
 
-* [cite_start]**Backend**: Python 3.12 com Framework Flask.
-* [cite_start]**Banco de Dados**: SQLite3 com suporte a chaves estrangeiras.
-* [cite_start]**Frontend**: HTML5, CSS3 (com suporte a temas Dark/Light) e JavaScript Vanilla.
-* [cite_start]**PDF Engine**: xhtml2pdf para renderização de templates.
-* [cite_start]**Segurança**: Werkzeug para hashing de senhas e proteção de rotas via decoradores de sessão.
+* **Backend**: Python 3.12 com Framework Flask.
+* **Banco de Dados**: SQLite3 com suporte a chaves estrangeiras.
+* **Frontend**: HTML5, CSS3 (com suporte a temas Dark/Light) e JavaScript Vanilla.
+* **PDF Engine**: xhtml2pdf para renderização de templates.
+* **Segurança**: Werkzeug para hashing de senhas e proteção de rotas via decoradores de sessão.
 
 ## 📁 Estrutura do Projeto
 
 O projeto segue a arquitetura **MVC (Model-View-Controller)** para garantir escalabilidade:
 
-* [cite_start]`/app/models`: Lógica de dados e interação com SQLite[cite: 4, 13].
-* [cite_start]`/app/controllers`: Regras de negócio e controle de rotas[cite: 2, 13].
-* [cite_start]`/app/views`: Templates dinâmicos em Jinja2[cite: 9, 13].
-* [cite_start]`/app/static`: Ativos estáticos (CSS, JS, Imagens e Uploads)[cite: 6, 13].
+* `/app/models`: Lógica de dados e interação com SQLite.
+* `/app/controllers`: Regras de negócio e controle de rotas.
+* `/app/views`: Templates dinâmicos em Jinja2.
+* `/app/static`: Ativos estáticos (CSS, JS, Imagens e Uploads).
 
 ## ⚙️ Como Instalar e Rodar
 
