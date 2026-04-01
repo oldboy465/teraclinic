@@ -28,6 +28,21 @@ class Aluno:
         conn.close()
         return aluno
 
+    # NOVA MUDANÇA: Adicionado filtro para buscar alunos vinculados a um terapeuta específico
+    @staticmethod
+    def get_by_terapeuta(terapeuta_id):
+        """Busca todos os alunos vinculados a um professor/terapeuta específico."""
+        conn = get_db()
+        alunos = conn.execute('''
+            SELECT a.*, p.nome_completo as terapeuta_nome 
+            FROM alunos a
+            LEFT JOIN professores p ON a.terapeuta_id = p.id
+            WHERE a.terapeuta_id = ?
+            ORDER BY a.nome ASC
+        ''', (terapeuta_id,)).fetchall()
+        conn.close()
+        return alunos
+
     @staticmethod
     def create(nome, data_nascimento, terapeuta_id, sexo, preferencias, evitaveis, informacoes_adicionais, foto=None):
         """Insere um novo aluno no banco de dados."""

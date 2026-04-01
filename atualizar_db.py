@@ -37,8 +37,31 @@ def atualizar_banco():
             print("✅ Coluna 'status_ativo' adicionada à tabela 'professores'.")
         else:
             print("✔️ A coluna 'status_ativo' já existe na tabela 'professores'.")
+            
+        # NOVA MUDANÇA (CORRIGIDA): Adicionando dados de login para professores
+        if 'username' not in colunas:
+            # SQLite não aceita ADD COLUMN com UNIQUE. 
+            # A solução é criar a coluna normal e depois adicionar um UNIQUE INDEX.
+            cursor.execute("ALTER TABLE professores ADD COLUMN username TEXT")
+            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_prof_username ON professores(username)")
+            print("✅ Coluna 'username' adicionada à tabela 'professores' com índice único.")
+            
+        if 'password_hash' not in colunas:
+            cursor.execute("ALTER TABLE professores ADD COLUMN password_hash TEXT")
+            print("✅ Coluna 'password_hash' adicionada à tabela 'professores'.")
+
     except Exception as e:
-        pass 
+        print(f"❌ Erro ao atualizar tabela de professores: {e}")
+        
+    # NOVA MUDANÇA: Adicionando vínculo de professor na tabela de atividades
+    try:
+        cursor.execute("PRAGMA table_info(atividades)")
+        colunas_atv = [info[1] for info in cursor.fetchall()]
+        if 'professor_id' not in colunas_atv:
+            cursor.execute("ALTER TABLE atividades ADD COLUMN professor_id INTEGER REFERENCES professores(id) ON DELETE CASCADE")
+            print("✅ Coluna 'professor_id' adicionada à tabela 'atividades'.")
+    except Exception as e:
+        print(f"❌ Erro ao atualizar tabela de atividades: {e}")
 
     # 3. CRIAR A TABELA DE NOTAS SEMÂNTICAS (NOVIDADE)
     try:

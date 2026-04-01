@@ -1,6 +1,6 @@
 # app/controllers/exportacao_controller.py
 import datetime
-from flask import Blueprint, render_template, request, make_response
+from flask import Blueprint, render_template, request, make_response, session
 from models.aluno import Aluno
 from models.professor import Professor
 from models.atividade import Atividade
@@ -21,6 +21,10 @@ def relatorio_aluno(aluno_id):
     """Gera um relatório do aluno (Mantido para compatibilidade)."""
     formato = request.args.get('format', 'html')
     aluno = Aluno.get_by_id(aluno_id)
+    
+    # Verificação de segurança adicional: se não for admin, validar se o aluno pertence a ele
+    if session.get('username') != 'admin' and aluno['terapeuta_id'] != session.get('user_id'):
+        return "Acesso Negado: Este aluno não está vinculado a você.", 403
     
     conn = get_db()
     lancamentos = conn.execute('''
@@ -62,9 +66,16 @@ def relatorio_aluno(aluno_id):
 @login_required
 def index():
     """Exibe a tela com o formulário de filtros para gerar o relatório."""
-    alunos = Aluno.get_all()
+    
+    # NOVA MUDANÇA: Restringe as listas de alunos e atividades ao professor logado
+    if session.get('username') == 'admin':
+        alunos = Aluno.get_all()
+        atividades = Atividade.get_all()
+    else:
+        alunos = Aluno.get_by_terapeuta(session.get('user_id'))
+        atividades = Atividade.get_by_professor(session.get('user_id'))
+        
     professores = Professor.get_all()
-    atividades = Atividade.get_all()
     intercorrencias = Intercorrencia.get_all()
     
     return render_template('relatorios/index.html', 
@@ -87,6 +98,10 @@ def gerar_relatorio():
         'atividade_id': request.args.get('atividade_id'),
         'intercorrencia_id': request.args.get('intercorrencia_id')
     }
+    
+    # NOVA MUDANÇA: Força o filtro do professor logado, ignorando tentativas de burla
+    if session.get('username') != 'admin':
+        filtros['professor_id'] = session.get('user_id')
     
     tipo_grafico = request.args.get('tipo_grafico', 'separado')
     

@@ -2,6 +2,7 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash # NOVA MUDANÇA: Importação para hash de senha
 from models.professor import Professor
 from controllers.auth_controller import login_required  # Importação do bloqueio de segurança
 
@@ -26,6 +27,11 @@ def create():
         telefone = request.form['telefone']
         email = request.form['email']
         
+        # NOVA MUDANÇA: Recebendo as credenciais de acesso
+        username = request.form.get('username')
+        password = request.form.get('password')
+        password_hash = generate_password_hash(password) if password else None
+        
         foto_filename = None
         if 'foto' in request.files:
             file = request.files['foto']
@@ -34,7 +40,8 @@ def create():
                 file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
                 foto_filename = filename
 
-        Professor.create(nome_completo, telefone, email, foto_filename)
+        # NOVA MUDANÇA: Enviando as credenciais para o Model
+        Professor.create(nome_completo, telefone, email, foto_filename, username, password_hash)
         return redirect(url_for('professor_bp.index'))
 
     return render_template('professores/form.html', professor=None)
@@ -56,6 +63,15 @@ def edit(id):
                 foto_filename = filename
 
         Professor.update(id, nome_completo, telefone, email, foto_filename)
+        
+        # NOVA MUDANÇA: Atualizando as credenciais de acesso se preenchidas
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username:
+            professor_atual = Professor.get_by_id(id)
+            novo_hash = generate_password_hash(password) if password else professor_atual['password_hash']
+            Professor.update_credentials(id, username, novo_hash)
+
         return redirect(url_for('professor_bp.index'))
 
     professor = Professor.get_by_id(id)

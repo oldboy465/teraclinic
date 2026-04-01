@@ -8,8 +8,18 @@ class Atividade:
 
     @staticmethod
     def get_all():
+        """Busca todas as atividades (visão geral/admin)."""
         conn = get_db()
         atividades = conn.execute('SELECT * FROM atividades ORDER BY sigla ASC').fetchall()
+        conn.close()
+        return atividades
+
+    # NOVA MUDANÇA: Adicionado método para buscar atividades de um professor específico
+    @staticmethod
+    def get_by_professor(professor_id):
+        """Busca as atividades vinculadas exclusivamente a um professor."""
+        conn = get_db()
+        atividades = conn.execute('SELECT * FROM atividades WHERE professor_id = ? ORDER BY sigla ASC', (professor_id,)).fetchall()
         conn.close()
         return atividades
 
@@ -20,13 +30,14 @@ class Atividade:
         conn.close()
         return atividade
 
+    # NOVA MUDANÇA: Modificado para aceitar o professor_id ao criar
     @staticmethod
-    def create(sigla, descricao, informacoes_adicionais):
+    def create(sigla, descricao, informacoes_adicionais, professor_id=None):
         conn = get_db()
         conn.execute('''
-            INSERT INTO atividades (sigla, descricao, informacoes_adicionais)
-            VALUES (?, ?, ?)
-        ''', (sigla, descricao, informacoes_adicionais))
+            INSERT INTO atividades (sigla, descricao, informacoes_adicionais, professor_id)
+            VALUES (?, ?, ?, ?)
+        ''', (sigla, descricao, informacoes_adicionais, professor_id))
         conn.commit()
         conn.close()
 

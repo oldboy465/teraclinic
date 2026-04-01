@@ -23,7 +23,7 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Tabela 0: Usuários
+    # Tabela 0: Usuários (Mantida por compatibilidade, mas o login agora foca em professores)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,14 +32,16 @@ def init_db():
         )
     ''')
 
-    # Tabela 1: Professores/Terapeutas
+    # Tabela 1: Professores/Terapeutas (Adicionado credenciais de login próprio)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS professores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome_completo TEXT NOT NULL,
             telefone TEXT,
             email TEXT,
-            foto TEXT
+            foto TEXT,
+            username TEXT UNIQUE,
+            password_hash TEXT
         )
     ''')
 
@@ -59,13 +61,15 @@ def init_db():
         )
     ''')
 
-    # Tabela 3: Atividades
+    # Tabela 3: Atividades (Adicionado vínculo com o professor)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS atividades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sigla TEXT NOT NULL,
             descricao TEXT NOT NULL,
-            informacoes_adicionais TEXT
+            informacoes_adicionais TEXT,
+            professor_id INTEGER,
+            FOREIGN KEY (professor_id) REFERENCES professores (id) ON DELETE CASCADE
         )
     ''')
 

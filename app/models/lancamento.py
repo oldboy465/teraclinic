@@ -61,6 +61,26 @@ class Lancamento:
         conn.commit()
         conn.close()
 
+    # NOVA MUDANÇA: Método para inserir múltiplos lançamentos de uma vez (Lote)
+    @staticmethod
+    def create_many(lancamentos_dados):
+        """
+        Insere uma lista de lançamentos no banco de dados de forma otimizada.
+        lancamentos_dados deve ser uma lista de tuplas com a seguinte ordem:
+        (aluno_id, professor_id, atividade_id, nota_atividade, intercorrencia_id, nota_intercorrencia, data_lancamento)
+        """
+        if not lancamentos_dados:
+            return
+
+        conn = get_db()
+        Lancamento.create_table()
+        conn.executemany('''
+            INSERT INTO lancamentos (aluno_id, professor_id, atividade_id, nota_atividade, intercorrencia_id, nota_intercorrencia, data_lancamento)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', lancamentos_dados)
+        conn.commit()
+        conn.close()
+
     @staticmethod
     def get_relatorio_avancado(filtros):
         """

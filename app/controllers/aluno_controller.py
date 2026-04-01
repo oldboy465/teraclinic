@@ -1,6 +1,6 @@
 # app/controllers/aluno_controller.py
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, session # NOVA MUDANÇA: Importando session
 from werkzeug.utils import secure_filename
 from models.aluno import Aluno
 from models.professor import Professor
@@ -20,7 +20,13 @@ def allowed_file(filename):
 @login_required
 def index():
     """Rota para listar todos os alunos."""
-    alunos = Aluno.get_all()
+    
+    # NOVA MUDANÇA: Regra de Negócio -> O professor opera sobre os seus dados
+    if session.get('username') == 'admin':
+        alunos = Aluno.get_all()
+    else:
+        alunos = Aluno.get_by_terapeuta(session.get('user_id'))
+        
     # Chama a view passando a lista de alunos
     return render_template('alunos/index.html', alunos=alunos)
 

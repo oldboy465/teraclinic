@@ -1,9 +1,10 @@
 # app/models/professor.py
 from database import get_db
+from werkzeug.security import check_password_hash
 
 class Professor:
     """
-    Classe Model responsável por gerenciar os dados dos Professores/Terapeutas.
+    Classe Model responsável por gerenciar os dados dos Professores/Terapeutas e suas credenciais.
     """
 
     @staticmethod
@@ -22,20 +23,37 @@ class Professor:
         conn.close()
         return professor
 
+    # NOVA MUDANÇA: Adicionado método de busca por username para login
     @staticmethod
-    def create(nome_completo, telefone, email, foto=None):
-        """Insere um novo professor no banco de dados."""
+    def get_by_username(username):
+        """Busca um professor pelo seu nome de usuário (login)."""
+        conn = get_db()
+        professor = conn.execute('SELECT * FROM professores WHERE username = ?', (username,)).fetchone()
+        conn.close()
+        return professor
+
+    # NOVA MUDANÇA: Adicionado método de validação de senha
+    @staticmethod
+    def validar_senha(usuario_hash, senha_digitada):
+        """Valida a senha do professor com o hash do banco."""
+        if not usuario_hash:
+            return False
+        return check_password_hash(usuario_hash, senha_digitada)
+
+    @staticmethod
+    def create(nome_completo, telefone, email, foto=None, username=None, password_hash=None):
+        """Insere um novo professor no banco de dados, incluindo credenciais opcionais."""
         conn = get_db()
         conn.execute('''
-            INSERT INTO professores (nome_completo, telefone, email, foto)
-            VALUES (?, ?, ?, ?)
-        ''', (nome_completo, telefone, email, foto))
+            INSERT INTO professores (nome_completo, telefone, email, foto, username, password_hash)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (nome_completo, telefone, email, foto, username, password_hash))
         conn.commit()
         conn.close()
 
     @staticmethod
     def update(professor_id, nome_completo, telefone, email, foto=None):
-        """Atualiza os dados de um professor."""
+        """Atualiza os dados cadastrais básicos de um professor."""
         conn = get_db()
         if foto:
             conn.execute('''
@@ -47,6 +65,18 @@ class Professor:
                 UPDATE professores SET nome_completo = ?, telefone = ?, email = ?
                 WHERE id = ?
             ''', (nome_completo, telefone, email, professor_id))
+        conn.commit()
+        conn.close()
+
+    # NOVA MUDANÇA: Método específico para atualizar credenciais de acesso
+    @staticmethod
+    def update_credentials(professor_id, username, password_hash):
+        """Atualiza as credenciais de login de um professor."""
+        conn = get_db()
+        conn.execute('''
+            UPDATE professores SET username = ?, password_hash = ?
+            WHERE id = ?
+        ''', (username, password_hash, professor_id))
         conn.commit()
         conn.close()
 

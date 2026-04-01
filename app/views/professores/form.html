@@ -29,6 +29,21 @@
             {% endif %}
         </div>
 
+        <div class="form-group full-width" style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 10px;">
+            <h3 style="color: var(--primary-color);">Credenciais de Acesso ao Sistema</h3>
+            <p style="font-size: 0.85em; color: var(--muted-color);">Preencha para permitir que este professor acesse o sistema com seus próprios dados.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="username">Usuário de Login</label>
+            <input type="text" id="username" name="username" value="{{ professor.username if professor and professor.username else '' }}" class="input-suave" placeholder="Ex: joao.silva">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha de Acesso</label>
+            <input type="password" id="password" name="password" class="input-suave" placeholder="{% if professor and professor.password_hash %}Deixe em branco para manter a atual{% else %}Digite uma senha segura{% endif %}">
+        </div>
+
         <div class="form-actions full-width">
             <a href="/professores" class="btn-secondary">Cancelar</a>
             <button type="submit" class="btn-primary">Salvar Terapeuta</button>

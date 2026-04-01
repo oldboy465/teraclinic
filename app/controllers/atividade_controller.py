@@ -1,5 +1,5 @@
 # app/controllers/atividade_controller.py
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, session
 from models.atividade import Atividade
 from controllers.auth_controller import login_required  # Importação do bloqueio de segurança
 
@@ -8,7 +8,12 @@ atividade_bp = Blueprint('atividade_bp', __name__, url_prefix='/atividades')
 @atividade_bp.route('/')
 @login_required
 def index():
-    atividades = Atividade.get_all()
+    # NOVA MUDANÇA: O professor só vê suas próprias atividades, a menos que seja admin
+    if session.get('username') == 'admin':
+        atividades = Atividade.get_all()
+    else:
+        atividades = Atividade.get_by_professor(session.get('user_id'))
+        
     return render_template('atividades/index.html', atividades=atividades)
 
 @atividade_bp.route('/novo', methods=['GET', 'POST'])
@@ -19,7 +24,10 @@ def create():
         descricao = request.form['descricao']
         informacoes_adicionais = request.form['informacoes_adicionais']
         
-        Atividade.create(sigla, descricao, informacoes_adicionais)
+        # NOVA MUDANÇA: Atrela a atividade ao professor logado
+        professor_id = session.get('user_id') if session.get('username') != 'admin' else None
+        
+        Atividade.create(sigla, descricao, informacoes_adicionais, professor_id)
         return redirect(url_for('atividade_bp.index'))
 
     return render_template('atividades/form.html', atividade=None)

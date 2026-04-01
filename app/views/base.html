@@ -13,18 +13,31 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>TERA <span>Clinic</span></h2>
+                {% if session.get('username') %}
+                <div style="margin-top: 10px; padding: 10px; background-color: var(--hover-color); border-radius: 8px;">
+                    <p style="font-size: 0.8em; color: var(--muted-color); margin: 0;">Logado como:</p>
+                    <p style="font-size: 0.95em; color: var(--primary-color); font-weight: bold; margin: 0;">{{ session.get('nome_completo', session.get('username')) }}</p>
+                </div>
+                {% endif %}
             </div>
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="/dashboard">📊 Dashboard</a></li>
                     <li><a href="/alunos">👦 Alunos</a></li>
-                    <li><a href="/professores">👩‍🏫 Terapeutas</a></li>
-                    <li><a href="/atividades">🧩 Atividades</a></li>
+                    
+                    {% if session.get('username') == 'admin' %}
+                    <li><a href="/professores">👩‍🏫 Terapeutas (Admin)</a></li>
+                    {% endif %}
+                    
+                    <li><a href="/atividades">🧩 Minhas Atividades</a></li>
                     <li><a href="/intercorrencias">⚠️ Intercorrências</a></li>
                     
                     <li><a href="/lancamentos/novo">📝 Diário / Lançamentos</a></li>
                     <li><a href="/relatorios">📈 Relatórios Analíticos</a></li>
-                    <li><a href="/notas">📖 Dicionário de Notas</a></li>
+                    
+                    {% if session.get('username') == 'admin' %}
+                    <li><a href="/notas">📖 Dicionário de Notas (Admin)</a></li>
+                    {% endif %}
                     
                     <li><a href="/logout" style="color: var(--danger-color); margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">🚪 Sair do Sistema</a></li>
                 </ul>

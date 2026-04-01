@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash
 class Usuario:
     """
     Classe Model responsável pela autenticação e gestão de usuários.
+    (Mantida para compatibilidade legada - o sistema agora utiliza autenticação focada no Professor)
     """
 
     @staticmethod
