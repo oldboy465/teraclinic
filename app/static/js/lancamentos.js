@@ -39,13 +39,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             // Array de IDs para o backend processar os blocos
                             let hiddenInput = `<input type="hidden" name="atividade_ids[]" value="${atv.id}">`;
 
-                            // Bloco 1: 5 Tentativas de Atividades
-                            let tentativasHtml = `<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">`;
+                            // Bloco 1: 5 Tentativas de Atividades (Agora em Layout Vertical)
+                            let tentativasHtml = `<div style="display:flex; flex-direction:column; gap:8px;">`;
                             for(let i=1; i<=5; i++) {
                                 tentativasHtml += `
-                                    <div style="display:flex; flex-direction:column; align-items:center;">
-                                        <small style="color:var(--primary-color); font-weight:bold;">Tent. ${i}</small>
-                                        <select name="t${i}_${atv.id}" class="input-suave" style="padding:4px; text-align:center;">
+                                    <div style="display:flex; gap:5px; align-items:center; background: var(--hover-color); padding: 5px; border-radius: 5px;">
+                                        <small style="font-weight:bold; min-width: 25px; color:var(--primary-color);">T${i}:</small>
+                                        <select name="t${i}_${atv.id}" class="input-suave" style="padding:4px; flex: 1; text-align:center;">
                                             ${optNotasAtv}
                                         </select>
                                     </div>
@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                             tentativasHtml += `</div>`;
 
-                            // Bloco 2: 5 Campos de Intercorrências vinculadas às tentativas
+                            // Bloco 2: 5 Campos de Intercorrências vinculadas às tentativas (Layout Vertical)
                             let intcHtml = `<div style="display:flex; flex-direction:column; gap:8px;">`;
                             for(let i=1; i<=5; i++) {
                                 intcHtml += `
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             intcHtml += `</div>`;
 
                             // Bloco 3: Observações de texto
-                            let obsHtml = `<textarea name="obs_${atv.id}" class="input-suave" rows="7" placeholder="Comportamentos, dados clínicos ou evolução..."></textarea>`;
+                            let obsHtml = `<textarea name="obs_${atv.id}" class="input-suave" rows="10" placeholder="Comportamentos, dados clínicos ou evolução..."></textarea>`;
 
                             tr.innerHTML = `
                                 <td style="vertical-align: top;">

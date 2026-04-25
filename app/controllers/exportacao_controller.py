@@ -96,7 +96,11 @@ def gerar_relatorio():
     else:
         formato = request.args.get('format', 'html')
 
-    lancamentos = Lancamento.get_relatorio_avancado(filtros)
+    # CORREÇÃO CRÍTICA AQUI: Converte a lista de sqlite3.Row para dicionários puros.
+    # Isso evita o Erro 500 (TypeError: Object of type Row is not JSON serializable) no Jinja2.
+    lancamentos_brutos = Lancamento.get_relatorio_avancado(filtros)
+    lancamentos = [dict(row) for row in lancamentos_brutos]
+    
     data_geracao = datetime.datetime.now().strftime("%d/%m/%Y às %H:%M")
 
     filtros_aplicados = []
