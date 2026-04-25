@@ -4,50 +4,59 @@
     <meta charset="UTF-8">
     <title>Relatório Analítico TERA</title>
     <style>
-        body { font-family: Helvetica, Arial, sans-serif; color: #333; line-height: 1.4; padding: 20px; }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; font-size: 24px; }
-        h2 { color: #34495e; font-size: 20px; margin-top: 30px; }
-        .info-panel { background-color: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .info-panel p { margin: 5px 0; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        th, td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
-        th { background-color: #34495e; color: white; }
-        
-        /* CORREÇÃO CRÍTICA: Ajustando a imagem para que ocupe no máximo a largura da página, 
-           mas respeite sua proporção natural no PDF, evitando o estiramento infinito */
-        .chart-img { width: 100%; max-width: 800px; height: auto; margin-top: 15px; display: block; margin-left: auto; margin-right: auto; }
-        
-        /* CORREÇÃO CRÍTICA: Travando a altura do contêiner do Canvas na View HTML 
-           para que o Chart.js não expanda infinitamente */
-        .canvas-container { position: relative; height: 400px; width: 100%; margin-bottom: 50px; }
-        
-        /* Oculta os botões de ação se estiver renderizando pelo xhtml2pdf */
+        @page { size: A4 landscape; margin: 1cm; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; line-height: 1.4; }
+        .header-table { width: 100%; border-bottom: 2px solid #3498db; margin-bottom: 20px; }
+        .logo-placeholder { width: 150px; height: 60px; background: #f0f0f0; border: 1px dashed #ccc; text-align: center; line-height: 60px; color: #999; font-size: 10px; }
+        h1 { color: #2c3e50; margin: 0; font-size: 22px; }
+        .info-panel { background-color: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6; }
+        .info-panel p { margin: 3px 0; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+        /* Repetição do cabeçalho nas páginas */
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+        th, td { border: 1px solid #bdc3c7; padding: 6px; text-align: left; }
+        th { background-color: #34495e; color: white; text-transform: uppercase; font-size: 9px; }
+        .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 30px; page-break-after: auto; }
+        .chart-img { width: 100%; max-height: 350px; object-fit: contain; }
+        .no-print { display: block; margin-bottom: 20px; }
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
-
-    <div class="no-print" style="margin-bottom: 20px; display: flex; gap: 10px;">
-        <a href="{{ url_for('exportacao_bp.index') }}" style="padding: 10px 15px; background: #95a5a6; color: white; text-decoration: none; border-radius: 5px;">⬅️ Voltar aos Filtros</a>
-        
+    <div class="no-print">
+        <a href="{{ url_for('exportacao_bp.index') }}" style="padding: 8px 12px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px;">⬅️ Filtros</a>
         <form id="formPdf" method="POST" action="{{ url_for('exportacao_bp.gerar_relatorio', **request.args) }}" style="display: inline;">
             <div id="hidden_inputs_container"></div>
             <input type="hidden" name="enviar_email" value="{{ request.args.get('enviar_email', '') }}">
             <input type="hidden" name="enviar_professor" value="{{ request.args.get('enviar_professor', '') }}">
-            <button type="button" onclick="baixarPDF()" style="padding: 10px 15px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">⬇️ Baixar em PDF ou Enviar E-mail</button>
+            <input type="hidden" name="incluir_obs" value="{{ 'true' if incluir_obs else 'false' }}">
+            <button type="button" onclick="baixarPDF()" style="padding: 8px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">⬇️ PDF / E-mail</button>
         </form>
     </div>
 
-    <h1>📊 Sistema TERA - Relatório Analítico de Desempenho</h1>
+    <table class="header-table">
+        <tr>
+            <td>
+                {% if session.get('username') == 'admin' %}
+                <div class="logo-placeholder">LOGO TERACLINIC</div>
+                {% endif %}
+            </td>
+            <td style="text-align: right;">
+                <h1>Relatório Analítico de Desempenho</h1>
+                <small>Sistema TERA - Terapia Especializada</small>
+            </td>
+        </tr>
+    </table>
     
     <div class="info-panel">
-        <p><strong>Gerado em:</strong> <span id="infoDataGeracao">{{ data_geracao }}</span></p>
-        <p><strong>Filtros Aplicados:</strong> <span id="infoFiltros">{{ descricao_filtros }}</span></p>
+        <p><strong>Gerado em:</strong> {{ data_geracao }}</p>
+        <p><strong>Filtros:</strong> {{ descricao_filtros }}</p>
     </div>
 
     {% if chart_images %}
         {% for img in chart_images %}
-            <div style="page-break-inside: avoid; text-align: center; margin-bottom: 30px;">
+            <div style="page-break-inside: avoid; text-align: center; margin-bottom: 20px;">
                 <img src="{{ img }}" class="chart-img">
             </div>
         {% endfor %}
@@ -55,25 +64,19 @@
         <div id="charts_wrapper">
             {% for sigla, l_lista in lancamentos_por_atividade.items() %}
             <div style="margin-bottom: 20px;">
-                <h2>Atividade Analisada: {{ sigla }}</h2>
-                <div class="canvas-container">
+                <h2 style="font-size: 16px; color: #2980b9;">Evolução: {{ sigla }}</h2>
+                <div class="chart-container">
                     <canvas class="relatorioChartCanvas" data-sigla="{{ sigla }}"></canvas>
                 </div>
             </div>
-            {% else %}
-                <p>Nenhum dado encontrado para os filtros selecionados.</p>
             {% endfor %}
         </div>
-
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        
-        <script>
-            const lancamentosAgrupados = {{ lancamentos_por_atividade | tojson | safe }};
-        </script>
+        <script>const lancamentosAgrupados = {{ lancamentos_por_atividade | tojson | safe }};</script>
         <script src="{{ url_for('static', filename='js/relatorio_geral.js') }}"></script>
     {% endif %}
 
-    <h2 style="page-break-before: always;">Detalhamento dos Lançamentos</h2>
+    <h2 style="font-size: 16px; color: #2c3e50; margin-top: 30px; border-bottom: 1px solid #eee;">Histórico Detalhado</h2>
     <table>
         <thead>
             <tr>
@@ -81,23 +84,24 @@
                 <th>Terapeuta</th>
                 <th>Aluno</th>
                 <th>Atividade</th>
-                <th>Soma Notas (Atv)</th>
-                <th>Soma Notas (Intc)</th>
+                <th style="text-align: center;">Ativ. (Sum)</th>
+                <th style="text-align: center;">Intc. (Sum)</th>
+                {% if incluir_obs %}<th>Observações</th>{% endif %}
             </tr>
         </thead>
         <tbody>
             {% for l in lancamentos_lista %}
             <tr>
-                <td>{{ l.data_lancamento }}</td>
+                <td style="white-space: nowrap;">{{ l.data_lancamento }}</td>
                 <td>{{ l.professor_nome }}</td>
                 <td>{{ l.aluno_nome }}</td>
-                <td>{{ l.atividade_sigla }}</td>
-                <td>{{ l.soma_atividades }} / 50</td>
-                <td>{{ l.soma_intercorrencias }} / 50</td>
+                <td><strong>{{ l.atividade_sigla }}</strong></td>
+                <td style="text-align: center;">{{ l.soma_atividades }}</td>
+                <td style="text-align: center;">{{ l.soma_intercorrencias }}</td>
+                {% if incluir_obs %}<td><small>{{ l.observacoes or '-' }}</small></td>{% endif %}
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
 </body>
 </html>

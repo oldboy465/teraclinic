@@ -4,7 +4,7 @@
 
 <div class="form-container">
     <p style="margin-bottom: 20px; color: var(--muted-color);">
-        💡 **Dica:** Preencha os filtros para delimitar o relatório. Se desejar enviar por e-mail automaticamente, marque as caixas de seleção na parte inferior.
+        💡 **Dica:** Preencha os filtros para delimitar o relatório. Os filtros são vinculativos: selecione o terapeuta para carregar seus alunos e o aluno para carregar suas atividades.
     </p>
 
     <form action="{{ url_for('exportacao_bp.gerar_relatorio') }}" method="GET" class="form-grid">
@@ -19,20 +19,10 @@
             <input type="date" name="data_fim" class="input-suave">
         </div>
 
-        <div class="form-group">
-            <label>Filtrar por Aluno</label>
-            <select name="aluno_id" class="input-suave">
-                <option value="">Todos os Alunos</option>
-                {% for aluno in alunos %}
-                <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
         {% if session.get('username') == 'admin' %}
         <div class="form-group">
             <label>Filtrar por Terapeuta/Professor</label>
-            <select name="professor_id" class="input-suave">
+            <select name="professor_id" id="professor_select" class="input-suave">
                 <option value="">Todos os Terapeutas</option>
                 {% for prof in professores %}
                 <option value="{{ prof.id }}">{{ prof.nome_completo }}</option>
@@ -41,18 +31,36 @@
         </div>
         {% endif %}
 
+        <div class="form-group">
+            <label>Filtrar por Aluno</label>
+            <select name="aluno_id" id="aluno_select" class="input-suave">
+                <option value="">Todos os Alunos</option>
+                {% for aluno in alunos %}
+                <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
         <div class="form-group full-width">
             <label>Filtrar por Atividades Específicas</label>
-            <div style="max-height: 150px; overflow-y: auto; background: var(--hover-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                {% for atv in atividades %}
-                <label style="display: block; margin-bottom: 8px; cursor: pointer; font-weight: normal;">
-                    <input type="checkbox" name="atividades_ids" value="{{ atv.id }}" style="margin-right: 8px;">
-                    {{ atv.sigla }} <small class="muted-text">- {{ atv.descricao }}</small>
-                </label>
+            <div id="atividades_container" style="max-height: 150px; overflow-y: auto; background: var(--hover-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                {% if session.get('username') != 'admin' %}
+                    {% for atv in atividades %}
+                    <label style="display: block; margin-bottom: 8px; cursor: pointer; font-weight: normal;">
+                        <input type="checkbox" name="atividades_ids" value="{{ atv.id }}" style="margin-right: 8px;">
+                        {{ atv.sigla }} <small class="muted-text">- {{ atv.descricao }}</small>
+                    </label>
+                    {% endfor %}
                 {% else %}
-                <span class="muted-text">Nenhuma atividade cadastrada.</span>
-                {% endfor %}
+                    <span class="muted-text">Selecione um aluno para listar as atividades.</span>
+                {% endif %}
             </div>
+        </div>
+
+        <div class="form-group full-width" style="background: var(--bg-color); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+                <input type="checkbox" name="incluir_obs" value="true"> Incluir campo de observações no detalhamento da tabela
+            </label>
         </div>
 
         <div class="form-group full-width" style="background: var(--hover-color); padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary-color);">
@@ -63,7 +71,6 @@
             <label style="display: flex; align-items: center; gap: 8px; font-weight: normal;">
                 <input type="checkbox" name="enviar_professor" value="true"> Enviar cópia de segurança para o E-mail do Terapeuta
             </label>
-            <small class="muted-text" style="display: block; margin-top: 5px;">* O envio requer que o Aluno e o Terapeuta tenham e-mails cadastrados.</small>
         </div>
 
         <div class="form-group full-width" style="margin-top: 15px;">
@@ -73,4 +80,7 @@
     </form>
 </div>
 
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/filtros_relatorio.js') }}"></script>
 {% endblock %}
