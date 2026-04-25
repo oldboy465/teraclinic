@@ -96,8 +96,7 @@ def gerar_relatorio():
     else:
         formato = request.args.get('format', 'html')
 
-    # CORREÇÃO CRÍTICA AQUI: Converte a lista de sqlite3.Row para dicionários puros.
-    # Isso evita o Erro 500 (TypeError: Object of type Row is not JSON serializable) no Jinja2.
+    # Mantemos a conversão do Row para dict puro para evitar erro no Jinja2 JSON Serializer
     lancamentos_brutos = Lancamento.get_relatorio_avancado(filtros)
     lancamentos = [dict(row) for row in lancamentos_brutos]
     
@@ -108,7 +107,6 @@ def gerar_relatorio():
     prof_selecionado = None
 
     if filtros['data_inicio'] and filtros['data_fim']: 
-        # Convertendo formato de exibição se necessário, mas mantendo a query em ISO
         filtros_aplicados.append(f"Período: {filtros['data_inicio']} a {filtros['data_fim']}")
 
     if filtros['aluno_id']: 

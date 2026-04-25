@@ -12,7 +12,14 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
         th, td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
         th { background-color: #34495e; color: white; }
-        .chart-img { width: 100%; max-width: 800px; height: auto; margin-top: 15px; border: 1px solid #ccc; }
+        
+        /* CORREÇÃO CRÍTICA: Ajustando a imagem para que ocupe no máximo a largura da página, 
+           mas respeite sua proporção natural no PDF, evitando o estiramento infinito */
+        .chart-img { width: 100%; max-width: 800px; height: auto; margin-top: 15px; display: block; margin-left: auto; margin-right: auto; }
+        
+        /* CORREÇÃO CRÍTICA: Travando a altura do contêiner do Canvas na View HTML 
+           para que o Chart.js não expanda infinitamente */
+        .canvas-container { position: relative; height: 400px; width: 100%; margin-bottom: 50px; }
         
         /* Oculta os botões de ação se estiver renderizando pelo xhtml2pdf */
         @media print { .no-print { display: none !important; } }
@@ -40,16 +47,18 @@
 
     {% if chart_images %}
         {% for img in chart_images %}
-            <div style="page-break-after: always; text-align: center;">
+            <div style="page-break-inside: avoid; text-align: center; margin-bottom: 30px;">
                 <img src="{{ img }}" class="chart-img">
             </div>
         {% endfor %}
     {% else %}
         <div id="charts_wrapper">
             {% for sigla, l_lista in lancamentos_por_atividade.items() %}
-            <div class="canvas-container" style="margin-bottom: 50px;">
+            <div style="margin-bottom: 20px;">
                 <h2>Atividade Analisada: {{ sigla }}</h2>
-                <canvas class="relatorioChartCanvas" data-sigla="{{ sigla }}"></canvas>
+                <div class="canvas-container">
+                    <canvas class="relatorioChartCanvas" data-sigla="{{ sigla }}"></canvas>
+                </div>
             </div>
             {% else %}
                 <p>Nenhum dado encontrado para os filtros selecionados.</p>
@@ -59,13 +68,12 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         
         <script>
-            // Dados brutos agrupados vindos do Python
             const lancamentosAgrupados = {{ lancamentos_por_atividade | tojson | safe }};
         </script>
         <script src="{{ url_for('static', filename='js/relatorio_geral.js') }}"></script>
     {% endif %}
 
-    <h2>Detalhamento dos Lançamentos</h2>
+    <h2 style="page-break-before: always;">Detalhamento dos Lançamentos</h2>
     <table>
         <thead>
             <tr>
