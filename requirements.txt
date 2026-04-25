@@ -2,7 +2,7 @@
 # Framework web principal
 Flask==3.0.2
 
-# Biblioteca auxiliar para gerenciar uploads seguros (vem com o Flask)
+# Bibliotecas auxiliar para gerenciar uploads seguros (vem com o Flask)
 Werkzeug==3.0.1
 
 # Força a versão nova que já vem pronta para Windows e Python 3.12
