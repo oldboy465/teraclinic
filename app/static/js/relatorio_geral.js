@@ -1,227 +1,185 @@
 // app/static/js/relatorio_geral.js
 
-// Tornei a variável legend HTML global para o PDF poder pegá-la caso precise,
-// mas a imagem já vai capturar o gráfico em si.
-let myCanvas;
+// Variável global para manter a referência aos gráficos caso precisem ser exportados
+let chartInstances = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-    if (typeof dadosBrutos === 'undefined' || dadosBrutos.length === 0) {
+    
+    // Verifica se os dados processados pelo backend chegaram corretamente na view
+    if (typeof lancamentosAgrupados === 'undefined' || Object.keys(lancamentosAgrupados).length === 0) {
         const legend = document.getElementById('chartLegend');
-        if(legend) legend.innerHTML = '<em>Gráfico não disponível: Sem dados para exibir.</em>';
+        if(legend) {
+            legend.innerHTML = '<em>Gráfico não disponível: Sem dados para exibir.</em>';
+        }
         return;
     }
 
-    myCanvas = document.getElementById('relatorioChart');
-    if (!myCanvas) return; // Se não tem canvas, estamos no PDF renderizado
-    const ctx = myCanvas.getContext('2d');
-
-    const container = myCanvas.parentElement;
-    myCanvas.width = container.clientWidth;
-    myCanvas.height = 400;
-
-    const colorPalette = [
-        '#2563eb', '#16a34a', '#d97706', '#9333ea', '#db2777', 
-        '#0891b2', '#ea580c', '#4f46e5', '#65a30d', '#dc2626'
-    ];
-    let colorIndex = 0;
-    const activityColors = {};
-
-    function getColorForActivity(name) {
-        if (!activityColors[name]) {
-            activityColors[name] = colorPalette[colorIndex % colorPalette.length];
-            colorIndex++;
+    // Função interna para formatar a data que vem no padrão do banco (YYYY-MM-DD)
+    // para o padrão brasileiro exigido pelo requisito (DD/MM/YYYY)
+    function formatarDataBR(dataIso) {
+        const partes = dataIso.split("-");
+        if (partes.length !== 3) {
+            return dataIso;
         }
-        return activityColors[name];
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
 
-    const datesRaw = [...new Set(dadosBrutos.map(d => d.data))].sort();
-    const labelsX = datesRaw.map(d => {
-        const parts = d.split('-');
-        return `${parts[2]}/${parts[1]}`; 
-    });
+    // Identifica todos os elementos Canvas na página.
+    // Como agora o sistema gera um gráfico para CADA atividade selecionada,
+    // precisamos iterar sobre todos eles para instanciar os gráficos do ChartJS.
+    const canvases = document.querySelectorAll('.relatorioChartCanvas');
 
-    let datasets = [];
-    let maxY = 10;
+    canvases.forEach(canvas => {
+        // Pega o nome/sigla da atividade que este canvas específico vai renderizar
+        const sigla = canvas.getAttribute('data-sigla');
+        
+        // Pega apenas os dados pertencentes a esta atividade
+        const dados = lancamentosAgrupados[sigla];
+        
+        if (!dados) {
+            return; // Se não houver dados para esta sigla, pula o loop
+        }
 
-    if (configGrafico === 'separado') {
-        const mapAtividades = {};
-        const mapIntercorrencias = {};
-
-        dadosBrutos.forEach(row => {
-            if (row.atividade && row.nota_atividade !== null) {
-                if (!mapAtividades[row.atividade]) {
-                    mapAtividades[row.atividade] = { color: getColorForActivity(row.atividade), dataMap: {} };
-                }
-                if (!mapAtividades[row.atividade].dataMap[row.data]) {
-                    mapAtividades[row.atividade].dataMap[row.data] = { sum: 0, count: 0 };
-                }
-                mapAtividades[row.atividade].dataMap[row.data].sum += row.nota_atividade;
-                mapAtividades[row.atividade].dataMap[row.data].count++;
+        let mapData = {};
+        
+        // Agrupa e soma as notas de atividades e intercorrências pelo dia exato
+        dados.forEach(linha => {
+            let dataLancamento = linha.data_lancamento;
+            
+            if (!mapData[dataLancamento]) {
+                mapData[dataLancamento] = { 
+                    somaAtv: 0, 
+                    somaIntc: 0, 
+                    count: 0 
+                };
             }
-
-            if (row.intercorrencia && row.nota_intercorrencia !== null) {
-                const labelIntc = `⚠️ ${row.intercorrencia}`;
-                if (!mapIntercorrencias[labelIntc]) {
-                    mapIntercorrencias[labelIntc] = { color: '#ef4444', dataMap: {} };
-                }
-                if (!mapIntercorrencias[labelIntc].dataMap[row.data]) {
-                    mapIntercorrencias[labelIntc].dataMap[row.data] = { sum: 0, count: 0 };
-                }
-                mapIntercorrencias[labelIntc].dataMap[row.data].sum += row.nota_intercorrencia;
-                mapIntercorrencias[labelIntc].dataMap[row.data].count++;
-            }
+            
+            mapData[dataLancamento].count++;
+            mapData[dataLancamento].somaAtv += linha.soma_atividades;
+            mapData[dataLancamento].somaIntc += linha.soma_intercorrencias;
         });
 
-        for (const [name, obj] of Object.entries(mapAtividades)) {
-            let dataArr = datesRaw.map(d => obj.dataMap[d] ? (obj.dataMap[d].sum / obj.dataMap[d].count) : null);
-            datasets.push({ name: name, color: obj.color, data: dataArr });
-        }
-        for (const [name, obj] of Object.entries(mapIntercorrencias)) {
-            let dataArr = datesRaw.map(d => obj.dataMap[d] ? (obj.dataMap[d].sum / obj.dataMap[d].count) : null);
-            datasets.push({ name: name, color: obj.color, data: dataArr });
-        }
+        // Ordenação cronológica correta das datas do eixo X
+        const datesIso = Object.keys(mapData).sort();
+        
+        // Aplica a formatação BR após a ordenação correta ISO
+        const datesBr = datesIso.map(d => formatarDataBR(d));
+        
+        // Arrays de valores finais que irão alimentar a linha verde (Atividades)
+        // e a linha vermelha (Intercorrências)
+        const dataAtv = datesIso.map(d => mapData[d].somaAtv / mapData[d].count);
+        const dataIntc = datesIso.map(d => mapData[d].somaIntc / mapData[d].count);
 
-    } else {
-        let somatorioAtv = datesRaw.map(() => 0);
-        let somatorioIntc = datesRaw.map(() => 0);
-        let maxSoma = 0;
-
-        dadosBrutos.forEach(row => {
-            const dateIdx = datesRaw.indexOf(row.data);
-            if (row.nota_atividade !== null) somatorioAtv[dateIdx] += row.nota_atividade;
-            if (row.nota_intercorrencia !== null) somatorioIntc[dateIdx] += row.nota_intercorrencia;
-            
-            if (somatorioAtv[dateIdx] > maxSoma) maxSoma = somatorioAtv[dateIdx];
-            if (somatorioIntc[dateIdx] > maxSoma) maxSoma = somatorioIntc[dateIdx];
-        });
-
-        maxY = maxSoma < 10 ? 10 : Math.ceil(maxSoma / 5) * 5; 
-
-        datasets.push({ name: 'Soma Total de Atividades', color: '#16a34a', data: somatorioAtv });
-        datasets.push({ name: 'Soma Total de Intercorrências', color: '#dc2626', data: somatorioIntc });
-    }
-
-    function renderChart() {
-        const padding = { top: 20, right: 30, bottom: 40, left: 40 };
-        const w = myCanvas.width;
-        const h = myCanvas.height;
-        const chartW = w - padding.left - padding.right;
-        const chartH = h - padding.top - padding.bottom;
-
-        // Fundo branco no Canvas para garantir que a imagem salva fique com fundo branco no PDF
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.font = "11px Arial";
-        ctx.fillStyle = "#64748b";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "middle";
-
-        const stepsY = 5;
-        for (let i = 0; i <= stepsY; i++) {
-            let val = (maxY / stepsY) * i;
-            let y = h - padding.bottom - (val / maxY) * chartH;
-            
-            ctx.fillStyle = "#64748b";
-            ctx.fillText(Math.round(val), padding.left - 10, y);
-            
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(w - padding.right, y);
-            ctx.strokeStyle = "#e2e8f0"; 
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        const stepX = labelsX.length > 1 ? chartW / (labelsX.length - 1) : chartW / 2;
-
-        // --- Adicionando as linhas de grade Verticais (Dias) ---
-        labelsX.forEach((lbl, idx) => {
-            let x = padding.left + (idx * stepX);
-            
-            // Desenha a linha vertical fina e suave
-            ctx.beginPath();
-            ctx.moveTo(x, padding.top);
-            ctx.lineTo(x, h - padding.bottom);
-            ctx.strokeStyle = "#f1f5f9"; // Cor bem sutil
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // Escreve a data
-            ctx.fillStyle = "#64748b";
-            ctx.fillText(lbl, x, h - padding.bottom + 10);
-        });
-
-        datasets.forEach(ds => {
-            ctx.beginPath();
-            let hasStarted = false;
-
-            ds.data.forEach((val, idx) => {
-                if (val !== null) {
-                    let x = padding.left + (idx * stepX);
-                    let y = h - padding.bottom - (val / maxY) * chartH;
-
-                    if (!hasStarted) {
-                        ctx.moveTo(x, y);
-                        hasStarted = true;
-                    } else {
-                        ctx.lineTo(x, y);
+        // Inicia a renderização do Chart.js para este canvas específico
+        const chartInstance = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: datesBr,
+                datasets: [
+                    {
+                        label: 'Desempenho da Atividade (Soma das Tentativas)',
+                        data: dataAtv,
+                        borderColor: '#16a34a', // Linha Verde Contínua conforme solicitado
+                        backgroundColor: '#16a34a',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        fill: false,
+                        tension: 0 // Zera a suavização da linha (linha reta estrita)
+                    },
+                    {
+                        label: 'Intensidade de Intercorrências (Soma das Notas)',
+                        data: dataIntc,
+                        borderColor: '#dc2626', // Linha Vermelha Contínua conforme solicitado
+                        backgroundColor: '#dc2626',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        fill: false,
+                        tension: 0 // Zera a suavização da linha (linha reta estrita)
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 50, // Limite máximo estabelecido pela matemática de 5 tentativas x nota 10
+                        ticks: { 
+                            stepSize: 5 
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { 
+                        position: 'top' 
+                    },
+                    title: {
+                        display: true,
+                        text: `Evolução Analítica: ${sigla}`,
+                        font: {
+                            size: 16
+                        }
+                    }
+                },
+                // Plugin customizado para garantir que o fundo do Canvas seja forçado
+                // para branco puro. Isso impede que o PDF fique com fundo transparente e preto.
+                animation: {
+                    onComplete: function() {
+                        const ctx = this.ctx;
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, this.width, this.height);
+                        ctx.restore();
                     }
                 }
-            });
-            ctx.strokeStyle = ds.color;
-            ctx.lineWidth = 2.5;
-            ctx.stroke();
-
-            ds.data.forEach((val, idx) => {
-                if (val !== null) {
-                    let x = padding.left + (idx * stepX);
-                    let y = h - padding.bottom - (val / maxY) * chartH;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = ds.color;
-                    ctx.fill();
-                    ctx.strokeStyle = "#fff";
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                }
-            });
+            }
         });
 
-        // Legenda html
-        const legendContainer = document.getElementById('chartLegend');
-        if (legendContainer) {
-            legendContainer.innerHTML = '';
-            datasets.forEach(ds => {
-                const badge = document.createElement('span');
-                badge.style.display = 'inline-block';
-                badge.style.margin = '0 10px';
-                badge.innerHTML = `<span style="display:inline-block; width:12px; height:12px; background-color:${ds.color}; border-radius:50%; margin-right:5px; vertical-align:middle;"></span>${ds.name}`;
-                legendContainer.appendChild(badge);
-            });
-        }
-    }
-
-    renderChart();
+        // Salva a instância caso seja necessário manipulá-la globalmente depois
+        chartInstances.push(chartInstance);
+    });
 });
 
-// Função chamada pelo botão "Baixar em PDF"
+// ============================================================================
+// FUNÇÃO DE EXPORTAÇÃO (PDF / EMAIL)
+// ============================================================================
+// Diferente da versão anterior que convertia apenas um canvas, esta função
+// itera por todos os gráficos renderizados na tela e gera uma lista de imagens
+// em Base64 para que o backend possa construir múltiplas páginas no PDF.
 function baixarPDF() {
-    if (!myCanvas) {
-        alert("Gráfico não carregado.");
+    
+    // Coleta todos os canvas na página
+    const canvases = document.querySelectorAll('.relatorioChartCanvas');
+    
+    // Pega o formulário de envio
+    const formPdf = document.getElementById("formPdf");
+    
+    if (canvases.length === 0) {
+        // Se não houver gráficos, submete o formulário diretamente
+        // O relatório em PDF será gerado apenas com a tabela de dados
+        formPdf.submit();
         return;
     }
-    
-    // Captura a imagem do canvas como Base64 (PNG)
-    const imgData = myCanvas.toDataURL("image/png");
-    
-    // Coloca a string Base64 no input oculto
-    document.getElementById("chart_image_input").value = imgData;
-    
-    // Submete o formulário para a mesma rota (já contém os query params)
-    const form = document.getElementById("formPdf");
-    form.action = window.location.href; // Mantém os filtros da URL
-    form.submit();
+
+    // Container escondido para injetar os inputs de imagem antes do envio
+    const container = document.getElementById('hidden_inputs_container');
+    container.innerHTML = ''; // Limpa execuções anteriores para evitar duplicatas
+
+    // Transforma cada Canvas em uma string de imagem (PNG/Base64)
+    // e cria um input dinâmico para enviá-lo pelo método POST
+    canvases.forEach(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'chart_images[]'; // A notação com [] permite ao backend ler como Array
+        input.value = imgData;
+        
+        container.appendChild(input);
+    });
+
+    // Submete o formulário com todas as imagens embutidas
+    formPdf.submit();
 }

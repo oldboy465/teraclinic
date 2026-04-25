@@ -9,18 +9,18 @@
     --border-color: #e2e8f0;
     --hover-color: #edf2f7;
     --input-bg: #ffffff;
-    
+
     /* Cores Globais */
     --primary-color: #8da4d0; /* Azul suave */
     --danger-color: #e5989b;  /* Vermelho/Rosado suave */
-    
-    /* Identidade Atividades (Azul/Verde Pastel) */
-    --atv-light: #d1e8e2; 
-    --atv-dark: #3a8570;
 
-    /* Identidade Intercorrências (Laranja/Pêssego Pastel) */
+    /* Identidade Atividades (Verde/Azul Pastel) */
+    --atv-light: #d1e8e2;
+    --atv-dark: #16a34a; /* Verde contínuo exigido */
+
+    /* Identidade Intercorrências (Vermelho/Pêssego Pastel) */
     --int-light: #ffe5d9;
-    --int-dark: #cc5c39;
+    --int-dark: #dc2626; /* Vermelho contínuo exigido */
 }
 
 /* MODO ESCURO */
@@ -32,10 +32,10 @@
     --border-color: #4a5568;
     --hover-color: #4a5568;
     --input-bg: #2d3748;
-    
-    --primary-color: #a3bffa; 
+
+    --primary-color: #a3bffa;
     --atv-light: #234e42;
-    --atv-dark: #68d391;
+    --atv-dark: #4ade80; /* Verde escuro */
     --int-light: #6b301c;
-    --int-dark: #f6ad55;
+    --int-dark: #f87171; /* Vermelho escuro */
 }

@@ -10,3 +10,9 @@ reportlab>=4.1.0
 
 # Biblioteca para geração de PDF
 xhtml2pdf>=0.2.15
+
+# Extensão para o envio de relatórios via e-mail
+Flask-Mail==0.9.1
+
+# Gerenciador de variáveis de ambiente (.env) para credenciais de email
+python-dotenv==1.0.1

@@ -1,111 +1,72 @@
 {% extends 'base.html' %}
-
-{% block page_title %}Registrar Novo Lançamento (Lote Diário){% endblock %}
-
+{% block page_title %}Registrar Lançamento Diário (5 Tentativas){% endblock %}
 {% block content %}
+
 <div class="form-container">
-    <form action="/lancamentos/novo" method="POST" class="form-grid">
+    <p style="margin-bottom: 20px; color: var(--muted-color);">
+        💡 **Instruções:** Selecione o aluno. As atividades vinculadas a ele aparecerão automaticamente. Preencha as notas das 5 tentativas. Se houver intercorrência, relacione-a à respectiva tentativa.
+    </p>
+
+    <form action="" method="POST" id="formLancamentos">
         
-        <div class="form-group full-width" style="margin-bottom: 15px;">
-            <div class="system-alert info-alert" style="background-color: var(--hover-color); padding: 15px; border-left: 4px solid var(--primary-color); border-radius: 8px;">
-                <p>💡 <strong>Dica de Lançamento Otimizado:</strong> Agora você pode selecionar um aluno e lançar as notas de <strong>múltiplas atividades de uma só vez</strong>. Apenas as atividades com nota preenchida serão salvas no histórico.</p>
+        <div class="form-grid" style="margin-bottom: 30px;">
+            <div class="form-group">
+                <label>Data do Registro *</label>
+                <input type="date" name="data_lancamento" id="data_lancamento" required class="input-suave" value="{{ now }}">
             </div>
-        </div>
 
-        <div class="form-group">
-            <label for="data_lancamento">Data do Registro *</label>
-            <input type="date" id="data_lancamento" name="data_lancamento" required class="input-suave">
-        </div>
-
-        <div class="form-group">
-            <label for="aluno_id">Selecionar Aluno *</label>
-            <select id="aluno_id" name="aluno_id" required class="input-suave">
-                <option value="">Selecione o Aluno vinculado a você</option>
-                {% for aluno in alunos %}
+            <div class="form-group">
+                <label>Selecionar Aluno *</label>
+                <select name="aluno_id" id="aluno_id_select" required class="input-suave">
+                    <option value="">-- Selecione o Aluno --</option>
+                    {% for aluno in alunos %}
                     <option value="{{ aluno.id }}">{{ aluno.nome }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="notes-block theme-atividade-border full-width">
-            <h3 class="atividade-text">Módulo de Atividades</h3>
-            <p style="font-size: 0.9em; color: var(--muted-color); margin-bottom: 15px;">Selecione a nota apenas para as atividades que foram trabalhadas na sessão de hoje.</p>
-            
-            <div class="table-container" style="box-shadow: none; padding: 0;">
-                <table class="table-clean theme-atividade">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%;">Sigla</th>
-                            <th style="width: 45%;">Descrição da Atividade</th>
-                            <th style="width: 35%;">Nota de Desempenho / Suporte</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for atv in atividades %}
-                        <tr>
-                            <td><span class="badge badge-atividade">{{ atv.sigla }}</span></td>
-                            <td><strong>{{ atv.descricao }}</strong></td>
-                            <td>
-                                <select name="nota_atividade_{{ atv.id }}" class="input-suave" style="width: 100%;">
-                                    <option value="">-- Não Avaliada Hoje --</option>
-                                    {% for valor, desc in notas_atv.items() %}
-                                        <option value="{{ valor }}">{{ valor }} - {{ desc }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="3" class="text-center" style="padding: 20px;">Você ainda não possui atividades cadastradas. Acesse o menu 'Atividades' para criar o seu catálogo.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 
-        <div class="notes-block theme-intercorrencia-border full-width">
-            <h3 class="intercorrencia-text">Módulo de Intercorrências</h3>
-            <p style="font-size: 0.9em; color: var(--muted-color); margin-bottom: 15px;">Registre a ocorrência e a intensidade de comportamentos ou crises, caso tenham acontecido.</p>
-            
-            <div class="table-container" style="box-shadow: none; padding: 0;">
-                <table class="table-clean theme-intercorrencia">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%;">Sigla</th>
-                            <th style="width: 45%;">Descrição da Intercorrência</th>
-                            <th style="width: 35%;">Intensidade do Evento</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for intc in intercorrencias %}
-                        <tr>
-                            <td><span class="badge badge-intercorrencia">{{ intc.sigla }}</span></td>
-                            <td><strong>{{ intc.descricao }}</strong></td>
-                            <td>
-                                <select name="nota_intercorrencia_{{ intc.id }}" class="input-suave" style="width: 100%;">
-                                    <option value="">-- Nenhuma Ocorrência --</option>
-                                    {% for valor, desc in notas_int.items() %}
-                                        <option value="{{ valor }}">{{ valor }} - {{ desc }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="3" class="text-center">O catálogo global de intercorrências está vazio.</td>
-                        </tr>
-                        {% endfor %}
+        <div id="loading_msg" style="display:none; color: var(--primary-color); margin-bottom: 20px;">Carregando atividades do aluno...</div>
+
+        <div class="table-container" id="container_atividades" style="display: none;">
+            <table class="table-clean" style="font-size: 0.85em;">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Atividade</th>
+                        <th style="width: 30%;">Tentativas (Nota 0-10)</th>
+                        <th style="width: 35%;">Intercorrências (Tipo / Intensidade 0-10)</th>
+                        <th style="width: 20%;">Observações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_atividades_dinamico">
                     </tbody>
-                </table>
+            </table>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <a href="{{ url_for('lancamento_bp.index') }}" class="btn-secondary">Cancelar</a>
+                <button type="submit" class="btn-primary">Salvar Lançamentos Diários</button>
             </div>
         </div>
-
-        <div class="form-actions full-width" style="margin-top: 20px;">
-            <a href="/lancamentos" class="btn-secondary">Cancelar Lote</a>
-            <button type="submit" class="btn-primary" style="padding: 15px 30px; font-size: 1.1em;">Salvar Lançamentos em Lote</button>
-        </div>
+        
     </form>
 </div>
-<script>document.getElementById('data_lancamento').valueAsDate = new Date();</script>
+
+<div id="opcoes_intercorrencias" style="display: none;">
+    <option value="">- Nenhuma -</option>
+    {% for intc in intercorrencias %}
+    <option value="{{ intc.id }}">{{ intc.sigla }}</option>
+    {% endfor %}
+</div>
+<div id="opcoes_notas_atv" style="display: none;">
+    <option value="">-</option>
+    {% for valor, desc in notas_atv.items() %}<option value="{{ valor }}">{{ valor }}</option>{% endfor %}
+</div>
+<div id="opcoes_notas_int" style="display: none;">
+    <option value="">-</option>
+    {% for valor, desc in notas_int.items() %}<option value="{{ valor }}">{{ valor }}</option>{% endfor %}
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/lancamentos.js') }}"></script>
 {% endblock %}

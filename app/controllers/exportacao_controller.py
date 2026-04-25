@@ -1,37 +1,35 @@
 # app/controllers/exportacao_controller.py
 import datetime
-from flask import Blueprint, render_template, request, make_response, session
+from flask import Blueprint, render_template, request, make_response, session, flash, redirect, url_for
 from models.aluno import Aluno
 from models.professor import Professor
 from models.atividade import Atividade
 from models.intercorrencia import Intercorrencia
 from models.lancamento import Lancamento
 from database import get_db
-from controllers.auth_controller import login_required  # Importação do bloqueio de segurança
-
-# Importamos o xhtml2pdf e o BytesIO para gerar o PDF nativamente
+from controllers.auth_controller import login_required
 from xhtml2pdf import pisa
 from io import BytesIO
+from utils.email_service import enviar_email_com_anexo
 
 exportacao_bp = Blueprint('exportacao_bp', __name__, url_prefix='/relatorios')
 
 @exportacao_bp.route('/aluno/<int:aluno_id>')
 @login_required
 def relatorio_aluno(aluno_id):
-    """Gera um relatório do aluno (Mantido para compatibilidade)."""
     formato = request.args.get('format', 'html')
     aluno = Aluno.get_by_id(aluno_id)
-    
-    # Verificação de segurança adicional: se não for admin, validar se o aluno pertence a ele
+
     if session.get('username') != 'admin' and aluno['terapeuta_id'] != session.get('user_id'):
         return "Acesso Negado: Este aluno não está vinculado a você.", 403
-    
+
     conn = get_db()
     lancamentos = conn.execute('''
-        SELECT l.*, act.sigla as atividade_sigla, intc.sigla as intercorrencia_sigla 
+        SELECT l.*, act.sigla as atividade_sigla, 
+               COALESCE(l.tentativa1,0) + COALESCE(l.tentativa2,0) + COALESCE(l.tentativa3,0) + COALESCE(l.tentativa4,0) + COALESCE(l.tentativa5,0) as soma_atividades,
+               COALESCE(l.int_nota1,0) + COALESCE(l.int_nota2,0) + COALESCE(l.int_nota3,0) + COALESCE(l.int_nota4,0) + COALESCE(l.int_nota5,0) as soma_intercorrencias
         FROM lancamentos l
         LEFT JOIN atividades act ON l.atividade_id = act.id
-        LEFT JOIN intercorrencias intc ON l.intercorrencia_id = intc.id
         WHERE l.aluno_id = ? ORDER BY l.data_lancamento DESC
     ''', (aluno_id,)).fetchall()
     conn.close()
@@ -43,107 +41,139 @@ def relatorio_aluno(aluno_id):
         pisa_status = pisa.CreatePDF(html_content, dest=pdf_file)
         if pisa_status.err:
             return "Erro ao gerar o documento PDF.", 500
-            
+
         response = make_response(pdf_file.getvalue())
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = f'inline; filename=relatorio_{aluno["nome"].replace(" ", "_")}.pdf'
         return response
-        
-    elif formato == 'whatsapp':
-        texto_whatsapp = f"Relatório Clínico - TERA\nPaciente: {aluno['nome']}\n\nResumo de Lançamentos:\n"
-        for l in lancamentos:
-            texto_whatsapp += f"- Data: {l['data_lancamento']} | "
-            if l['atividade_sigla']: texto_whatsapp += f"Ativ: {l['atividade_sigla']} (Nota: {l['nota_atividade']}) "
-            if l['intercorrencia_sigla']: texto_whatsapp += f"Interc: {l['intercorrencia_sigla']} (Nota: {l['nota_intercorrencia']})"
-            texto_whatsapp += "\n"
-        return render_template('relatorios/relatorio_whatsapp.html', texto_whatsapp=texto_whatsapp, aluno=aluno)
 
     return html_content
 
-# --- NOVAS ROTAS PARA O RELATÓRIO ANALÍTICO GERAL ---
 
 @exportacao_bp.route('/')
 @login_required
 def index():
-    """Exibe a tela com o formulário de filtros para gerar o relatório."""
-    
-    # NOVA MUDANÇA: Restringe as listas de alunos e atividades ao professor logado
     if session.get('username') == 'admin':
         alunos = Aluno.get_all()
         atividades = Atividade.get_all()
     else:
         alunos = Aluno.get_by_terapeuta(session.get('user_id'))
         atividades = Atividade.get_by_professor(session.get('user_id'))
-        
+
     professores = Professor.get_all()
     intercorrencias = Intercorrencia.get_all()
-    
-    return render_template('relatorios/index.html', 
-                           alunos=alunos, 
-                           professores=professores, 
-                           atividades=atividades, 
+
+    return render_template('relatorios/index.html',
+                           alunos=alunos,
+                           professores=professores,
+                           atividades=atividades,
                            intercorrencias=intercorrencias)
 
 @exportacao_bp.route('/gerar', methods=['GET', 'POST'])
 @login_required
 def gerar_relatorio():
-    """Recebe os filtros, busca no banco e gera a saída HTML ou PDF."""
-    
-    # Parâmetros vindos da URL (tanto no GET quanto na Action do POST)
     filtros = {
-        'data_inicio': request.args.get('data_inicio'),
-        'data_fim': request.args.get('data_fim'),
-        'aluno_id': request.args.get('aluno_id'),
-        'professor_id': request.args.get('professor_id'),
-        'atividade_id': request.args.get('atividade_id'),
-        'intercorrencia_id': request.args.get('intercorrencia_id')
+        'data_inicio': request.args.get('data_inicio') or request.form.get('data_inicio'),
+        'data_fim': request.args.get('data_fim') or request.form.get('data_fim'),
+        'aluno_id': request.args.get('aluno_id') or request.form.get('aluno_id'),
+        'professor_id': request.args.get('professor_id') or request.form.get('professor_id'),
+        'atividades_ids': request.args.getlist('atividades_ids') or request.form.getlist('atividades_ids')
     }
-    
-    # NOVA MUDANÇA: Força o filtro do professor logado, ignorando tentativas de burla
+
     if session.get('username') != 'admin':
         filtros['professor_id'] = session.get('user_id')
-    
-    tipo_grafico = request.args.get('tipo_grafico', 'separado')
-    
-    # Se for POST, significa que o frontend nos enviou a imagem do gráfico
-    chart_image = None
+
+    chart_images = []
+    enviar_email = False
+    enviar_para_professor = False
+
     if request.method == 'POST':
-        chart_image = request.form.get('chart_image')
-        formato = 'pdf' # Força o formato PDF se for um POST com a imagem
+        # Pega as imagens do front (pode vir como array se houver múltiplos canvas)
+        chart_images = request.form.getlist('chart_images[]')
+        formato = 'pdf'
+        enviar_email = request.form.get('enviar_email') == 'true'
+        enviar_para_professor = request.form.get('enviar_professor') == 'true'
     else:
         formato = request.args.get('format', 'html')
 
     lancamentos = Lancamento.get_relatorio_avancado(filtros)
-
     data_geracao = datetime.datetime.now().strftime("%d/%m/%Y às %H:%M")
-    
+
     filtros_aplicados = []
-    if filtros['data_inicio'] and filtros['data_fim']: filtros_aplicados.append(f"Período: {filtros['data_inicio']} a {filtros['data_fim']}")
-    elif filtros['data_inicio']: filtros_aplicados.append(f"A partir de: {filtros['data_inicio']}")
-    elif filtros['data_fim']: filtros_aplicados.append(f"Até: {filtros['data_fim']}")
-    
-    if filtros['aluno_id']: filtros_aplicados.append(f"Aluno: {Aluno.get_by_id(filtros['aluno_id'])['nome']}")
-    if filtros['professor_id']: filtros_aplicados.append(f"Prof: {Professor.get_by_id(filtros['professor_id'])['nome_completo']}")
-    if filtros['atividade_id']: filtros_aplicados.append(f"Ativ: {Atividade.get_by_id(filtros['atividade_id'])['sigla']}")
-    if filtros['intercorrencia_id']: filtros_aplicados.append(f"Interc: {Intercorrencia.get_by_id(filtros['intercorrencia_id'])['sigla']}")
-    
+    aluno_selecionado = None
+    prof_selecionado = None
+
+    if filtros['data_inicio'] and filtros['data_fim']: 
+        # Convertendo formato de exibição se necessário, mas mantendo a query em ISO
+        filtros_aplicados.append(f"Período: {filtros['data_inicio']} a {filtros['data_fim']}")
+
+    if filtros['aluno_id']: 
+        aluno_selecionado = Aluno.get_by_id(filtros['aluno_id'])
+        if aluno_selecionado: filtros_aplicados.append(f"Aluno: {aluno_selecionado['nome']}")
+        
+    if filtros['professor_id']: 
+        prof_selecionado = Professor.get_by_id(filtros['professor_id'])
+        if prof_selecionado: filtros_aplicados.append(f"Prof: {prof_selecionado['nome_completo']}")
+
+    if filtros['atividades_ids']: 
+        nomes_atvs = [Atividade.get_by_id(aid)['sigla'] for aid in filtros['atividades_ids'] if Atividade.get_by_id(aid)]
+        filtros_aplicados.append(f"Atividades: {', '.join(nomes_atvs)}")
+
     descricao_filtros = " | ".join(filtros_aplicados) if filtros_aplicados else "Nenhum filtro aplicado (Visão Geral)"
 
-    html_content = render_template('relatorios/relatorio_geral.html', 
-                                   lancamentos=lancamentos, 
-                                   descricao_filtros=descricao_filtros, 
-                                   data_geracao=data_geracao,
-                                   tipo_grafico=tipo_grafico,
-                                   chart_image=chart_image) # Passamos a imagem para o template
+    # Agrupar lançamentos por atividade para renderização paginada no PDF
+    lancamentos_por_atividade = {}
+    for l in lancamentos:
+        sigla = l['atividade_sigla'] or 'Sem Atividade'
+        if sigla not in lancamentos_por_atividade:
+            lancamentos_por_atividade[sigla] = []
+        lancamentos_por_atividade[sigla].append(l)
 
-    if formato == 'pdf':
+    html_content = render_template('relatorios/relatorio_geral.html',
+                                   lancamentos_por_atividade=lancamentos_por_atividade,
+                                   lancamentos_lista=lancamentos,
+                                   descricao_filtros=descricao_filtros,
+                                   data_geracao=data_geracao,
+                                   chart_images=chart_images)
+
+    if formato == 'pdf' or enviar_email:
         pdf_file = BytesIO()
         pisa_status = pisa.CreatePDF(html_content, dest=pdf_file)
-        
+
         if pisa_status.err:
             return "Erro ao gerar PDF", 500
+
+        pdf_bytes = pdf_file.getvalue()
+
+        if enviar_email and aluno_selecionado:
+            destinatarios = []
+            if aluno_selecionado['email']:
+                destinatarios.append(aluno_selecionado['email'])
             
-        response = make_response(pdf_file.getvalue())
+            if enviar_para_professor and prof_selecionado and prof_selecionado['email']:
+                destinatarios.append(prof_selecionado['email'])
+            elif enviar_para_professor and session.get('username') != 'admin':
+                prof_logado = Professor.get_by_id(session.get('user_id'))
+                if prof_logado and prof_logado['email']: destinatarios.append(prof_logado['email'])
+
+            if destinatarios:
+                sucesso = enviar_email_com_anexo(
+                    destinatarios=destinatarios,
+                    assunto=f"Relatório Clínico - TERA - {aluno_selecionado['nome']}",
+                    corpo="Segue em anexo o relatório analítico de acompanhamento terapêutico.",
+                    pdf_bytes=pdf_bytes,
+                    nome_arquivo=f"Relatorio_{aluno_selecionado['nome'].replace(' ', '_')}.pdf"
+                )
+                if sucesso:
+                    flash('Relatório enviado por e-mail com sucesso!', 'success')
+                else:
+                    flash('Erro ao enviar e-mail. Verifique as configurações.', 'danger')
+                return redirect(url_for('exportacao_bp.index'))
+            else:
+                flash('Nenhum e-mail de destinatário encontrado.', 'warning')
+                return redirect(url_for('exportacao_bp.index'))
+
+        response = make_response(pdf_bytes)
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = 'inline; filename=relatorio_analitico_tera.pdf'
         return response

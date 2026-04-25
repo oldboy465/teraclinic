@@ -12,8 +12,8 @@ def get_db():
     Adicionado timeout para evitar o erro "database is locked".
     """
     conn = sqlite3.connect(DB_NAME, timeout=20, check_same_thread=False)
-    conn.row_factory = sqlite3.Row 
-    conn.execute('PRAGMA foreign_keys = ON;') 
+    conn.row_factory = sqlite3.Row
+    conn.execute('PRAGMA foreign_keys = ON;')
     return conn
 
 def init_db():
@@ -45,7 +45,7 @@ def init_db():
         )
     ''')
 
-    # Tabela 2: Alunos
+    # Tabela 2: Alunos (Atualizada com campo de Email para o destinatário)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,6 +57,7 @@ def init_db():
             evitaveis TEXT,
             informacoes_adicionais TEXT,
             foto TEXT,
+            email TEXT,
             FOREIGN KEY (terapeuta_id) REFERENCES professores (id) ON DELETE SET NULL
         )
     ''')
@@ -83,7 +84,7 @@ def init_db():
         )
     ''')
 
-    # Tabela 5: Lançamentos 
+    # Tabela 5: Lançamentos (Atualizada para suportar as 5 tentativas de notas e intercorrências)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS lancamentos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,13 +95,34 @@ def init_db():
             intercorrencia_id INTEGER,
             nota_intercorrencia INTEGER,
             data_lancamento DATE NOT NULL,
+            tentativa1 INTEGER,
+            tentativa2 INTEGER,
+            tentativa3 INTEGER,
+            tentativa4 INTEGER,
+            tentativa5 INTEGER,
+            intercorrencia1_id INTEGER,
+            int_nota1 INTEGER,
+            intercorrencia2_id INTEGER,
+            int_nota2 INTEGER,
+            intercorrencia3_id INTEGER,
+            int_nota3 INTEGER,
+            intercorrencia4_id INTEGER,
+            int_nota4 INTEGER,
+            intercorrencia5_id INTEGER,
+            int_nota5 INTEGER,
+            observacoes TEXT,
             FOREIGN KEY (aluno_id) REFERENCES alunos (id) ON DELETE CASCADE,
             FOREIGN KEY (professor_id) REFERENCES professores (id) ON DELETE CASCADE,
             FOREIGN KEY (atividade_id) REFERENCES atividades (id) ON DELETE SET NULL,
-            FOREIGN KEY (intercorrencia_id) REFERENCES intercorrencias (id) ON DELETE SET NULL
+            FOREIGN KEY (intercorrencia_id) REFERENCES intercorrencias (id) ON DELETE SET NULL,
+            FOREIGN KEY (intercorrencia1_id) REFERENCES intercorrencias (id) ON DELETE SET NULL,
+            FOREIGN KEY (intercorrencia2_id) REFERENCES intercorrencias (id) ON DELETE SET NULL,
+            FOREIGN KEY (intercorrencia3_id) REFERENCES intercorrencias (id) ON DELETE SET NULL,
+            FOREIGN KEY (intercorrencia4_id) REFERENCES intercorrencias (id) ON DELETE SET NULL,
+            FOREIGN KEY (intercorrencia5_id) REFERENCES intercorrencias (id) ON DELETE SET NULL
         )
     ''')
-    
+
     # Tabela 6: Notas Semânticas Dinâmicas (Módulo 5 Editável)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS notas (
@@ -111,6 +133,17 @@ def init_db():
         )
     ''')
     
+    # Tabela 7: Vínculo N:N entre Aluno e Atividades
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS aluno_atividades (
+            aluno_id INTEGER NOT NULL,
+            atividade_id INTEGER NOT NULL,
+            PRIMARY KEY (aluno_id, atividade_id),
+            FOREIGN KEY (aluno_id) REFERENCES alunos (id) ON DELETE CASCADE,
+            FOREIGN KEY (atividade_id) REFERENCES atividades (id) ON DELETE CASCADE
+        )
+    ''')
+
     # Preencher notas padrão apenas se a tabela estiver completamente vazia
     cursor.execute("SELECT COUNT(*) FROM notas")
     if cursor.fetchone()[0] == 0:

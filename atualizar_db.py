@@ -8,7 +8,7 @@ DB_PATH = os.path.join(BASE_DIR, 'tera_database.db')
 
 def atualizar_banco():
     print("Iniciando verificação e atualização do Banco de Dados...")
-    
+
     # Se o banco não existir, criamos a conexão mesmo assim (ele será criado vazio)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -31,28 +31,28 @@ def atualizar_banco():
         # Pega as informações da tabela professores
         cursor.execute("PRAGMA table_info(professores)")
         colunas = [info[1] for info in cursor.fetchall()]
-        
+
         if 'status_ativo' not in colunas:
             cursor.execute("ALTER TABLE professores ADD COLUMN status_ativo INTEGER DEFAULT 1")
             print("✅ Coluna 'status_ativo' adicionada à tabela 'professores'.")
         else:
             print("✔️ A coluna 'status_ativo' já existe na tabela 'professores'.")
-            
+
         # NOVA MUDANÇA (CORRIGIDA): Adicionando dados de login para professores
         if 'username' not in colunas:
-            # SQLite não aceita ADD COLUMN com UNIQUE. 
+            # SQLite não aceita ADD COLUMN com UNIQUE.
             # A solução é criar a coluna normal e depois adicionar um UNIQUE INDEX.
             cursor.execute("ALTER TABLE professores ADD COLUMN username TEXT")
             cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_prof_username ON professores(username)")
             print("✅ Coluna 'username' adicionada à tabela 'professores' com índice único.")
-            
+
         if 'password_hash' not in colunas:
             cursor.execute("ALTER TABLE professores ADD COLUMN password_hash TEXT")
             print("✅ Coluna 'password_hash' adicionada à tabela 'professores'.")
 
     except Exception as e:
         print(f"❌ Erro ao atualizar tabela de professores: {e}")
-        
+
     # NOVA MUDANÇA: Adicionando vínculo de professor na tabela de atividades
     try:
         cursor.execute("PRAGMA table_info(atividades)")
@@ -74,7 +74,7 @@ def atualizar_banco():
             )
         ''')
         print("✅ Tabela 'notas' verificada/criada com sucesso.")
-        
+
         # Popula a tabela com os valores padrão se ela estiver vazia
         cursor.execute("SELECT COUNT(*) FROM notas")
         if cursor.fetchone()[0] == 0:
@@ -107,6 +107,50 @@ def atualizar_banco():
             print("✅ Valores padrão de notas inseridos com sucesso.")
     except Exception as e:
         print(f"❌ Erro ao criar/popular tabela de notas: {e}")
+
+    # 4. NOVAS MUDANÇAS PARA O SISTEMA DE TENTATIVAS E VÍNCULOS
+    try:
+        # Adicionar campo email aos alunos
+        cursor.execute("PRAGMA table_info(alunos)")
+        colunas_alunos = [info[1] for info in cursor.fetchall()]
+        if 'email' not in colunas_alunos:
+            cursor.execute("ALTER TABLE alunos ADD COLUMN email TEXT")
+            print("✅ Coluna 'email' adicionada à tabela 'alunos'.")
+
+        # Criar tabela de vínculo Aluno -> Atividades
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS aluno_atividades (
+                aluno_id INTEGER NOT NULL,
+                atividade_id INTEGER NOT NULL,
+                PRIMARY KEY (aluno_id, atividade_id),
+                FOREIGN KEY (aluno_id) REFERENCES alunos (id) ON DELETE CASCADE,
+                FOREIGN KEY (atividade_id) REFERENCES atividades (id) ON DELETE CASCADE
+            )
+        ''')
+        print("✅ Tabela 'aluno_atividades' verificada/criada com sucesso.")
+
+        # Expandir a tabela Lançamentos para comportar 5 tentativas e observações
+        cursor.execute("PRAGMA table_info(lancamentos)")
+        colunas_lancamentos = [info[1] for info in cursor.fetchall()]
+
+        novas_colunas_lancamentos = {
+            'tentativa1': 'INTEGER', 'tentativa2': 'INTEGER', 'tentativa3': 'INTEGER', 
+            'tentativa4': 'INTEGER', 'tentativa5': 'INTEGER',
+            'intercorrencia1_id': 'INTEGER', 'int_nota1': 'INTEGER',
+            'intercorrencia2_id': 'INTEGER', 'int_nota2': 'INTEGER',
+            'intercorrencia3_id': 'INTEGER', 'int_nota3': 'INTEGER',
+            'intercorrencia4_id': 'INTEGER', 'int_nota4': 'INTEGER',
+            'intercorrencia5_id': 'INTEGER', 'int_nota5': 'INTEGER',
+            'observacoes': 'TEXT'
+        }
+
+        for col_name, col_type in novas_colunas_lancamentos.items():
+            if col_name not in colunas_lancamentos:
+                cursor.execute(f"ALTER TABLE lancamentos ADD COLUMN {col_name} {col_type}")
+                print(f"✅ Coluna '{col_name}' adicionada à tabela 'lancamentos'.")
+
+    except Exception as e:
+        print(f"❌ Erro ao atualizar estrutura de tentativas/alunos: {e}")
 
     conn.commit()
     conn.close()

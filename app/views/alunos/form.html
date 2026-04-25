@@ -1,69 +1,88 @@
 {% extends 'base.html' %}
-
 {% block page_title %}{{ 'Editar Aluno' if aluno else 'Novo Aluno' }}{% endblock %}
-
 {% block content %}
+
 <div class="form-container">
-    <form action="{{ '/alunos/editar/' ~ aluno.id if aluno else '/alunos/novo' }}" method="POST" enctype="multipart/form-data" class="form-grid">
+    <form action="" method="POST" enctype="multipart/form-data" class="form-grid">
         
         <div class="form-group full-width">
-            <label for="nome">Nome Completo do Aluno *</label>
-            <input type="text" id="nome" name="nome" value="{{ aluno.nome if aluno else '' }}" required class="input-suave">
+            <label>Nome Completo do Aluno *</label>
+            <input type="text" name="nome" value="{{ aluno.nome if aluno else '' }}" class="input-suave" required>
         </div>
 
         <div class="form-group">
-            <label for="data_nascimento">Data de Nascimento</label>
-            <input type="date" id="data_nascimento" name="data_nascimento" value="{{ aluno.data_nascimento if aluno else '' }}" class="input-suave">
+            <label>Data de Nascimento</label>
+            <input type="date" name="data_nascimento" value="{{ aluno.data_nascimento if aluno else '' }}" class="input-suave">
         </div>
 
         <div class="form-group">
-            <label for="sexo">Sexo biológico</label>
-            <select id="sexo" name="sexo" class="input-suave">
-                <option value="Masculino" {% if aluno and aluno.sexo == 'Masculino' %}selected{% endif %}>Masculino</option>
-                <option value="Feminino" {% if aluno and aluno.sexo == 'Feminino' %}selected{% endif %}>Feminino</option>
+            <label>Sexo biológico</label>
+            <select name="sexo" class="input-suave">
+                <option value="M" {% if aluno and aluno.sexo == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if aluno and aluno.sexo == 'F' %}selected{% endif %}>Feminino</option>
                 <option value="Outro" {% if aluno and aluno.sexo == 'Outro' %}selected{% endif %}>Outro</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="terapeuta_id">Terapeuta/Professor Responsável</label>
-            <select id="terapeuta_id" name="terapeuta_id" class="input-suave">
+            <label>Terapeuta/Professor Responsável</label>
+            <select name="terapeuta_id" class="input-suave">
                 <option value="">Selecione um terapeuta</option>
                 {% for prof in terapeutas %}
-                    <option value="{{ prof.id }}" {% if aluno and aluno.terapeuta_id == prof.id %}selected{% endif %}>
-                        {{ prof.nome_completo }}
-                    </option>
+                <option value="{{ prof.id }}" {% if aluno and aluno.terapeuta_id == prof.id %}selected{% endif %}>
+                    {{ prof.nome_completo }}
+                </option>
                 {% endfor %}
             </select>
         </div>
 
+        <div class="form-group">
+            <label>E-mail (Responsável - Para envio de Relatórios)</label>
+            <input type="email" name="email" value="{{ aluno.email if aluno else '' }}" class="input-suave" placeholder="email@exemplo.com">
+        </div>
+
         <div class="form-group full-width">
-            <label for="foto">Foto do Aluno (Max 2MB)</label>
-            <input type="file" id="foto" name="foto" accept=".jpg, .jpeg, .png, .webp" class="input-suave file-input">
+            <label>Foto do Aluno (Max 2MB)</label>
+            <input type="file" name="foto" accept=".png, .jpg, .jpeg, .webp" class="input-suave file-input">
             {% if aluno and aluno.foto %}
-                <p class="file-help">Arquivo atual: {{ aluno.foto }}</p>
+            <small class="muted-text">Arquivo atual: {{ aluno.foto }}</small>
             {% endif %}
         </div>
 
         <div class="form-group full-width">
-            <label for="preferencias">Preferências e Reforçadores (O que a criança gosta)</label>
-            <textarea id="preferencias" name="preferencias" rows="4" maxlength="5000" class="input-suave">{{ aluno.preferencias if aluno else '' }}</textarea>
+            <label>Atividades Vinculadas ao Aluno (Selecione quais atividades ele deve fazer)</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: var(--hover-color); padding: 15px; border-radius: 8px;">
+                {% for atv in atividades_disponiveis %}
+                <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                    <input type="checkbox" name="atividades_ids" value="{{ atv.id }}" {% if atv.id in atividades_vinculadas %}checked{% endif %}>
+                    {{ atv.sigla }}
+                </label>
+                {% else %}
+                <span style="grid-column: 1/-1;">Nenhuma atividade disponível para vínculo.</span>
+                {% endfor %}
+            </div>
         </div>
 
         <div class="form-group full-width">
-            <label for="evitaveis">Evitáveis e Gatilhos (O que deve ser evitado)</label>
-            <textarea id="evitaveis" name="evitaveis" rows="4" maxlength="5000" class="input-suave">{{ aluno.evitaveis if aluno else '' }}</textarea>
+            <label>Preferências e Reforçadores (O que a criança gosta)</label>
+            <textarea name="preferencias" rows="3" class="input-suave">{{ aluno.preferencias if aluno else '' }}</textarea>
         </div>
 
         <div class="form-group full-width">
-            <label for="informacoes_adicionais">Informações Médicas / Adicionais</label>
-            <textarea id="informacoes_adicionais" name="informacoes_adicionais" rows="3" class="input-suave">{{ aluno.informacoes_adicionais if aluno else '' }}</textarea>
+            <label>Evitáveis e Gatilhos (O que deve ser evitado)</label>
+            <textarea name="evitaveis" rows="3" class="input-suave">{{ aluno.evitaveis if aluno else '' }}</textarea>
         </div>
 
-        <div class="form-actions full-width">
-            <a href="/alunos" class="btn-secondary">Cancelar</a>
+        <div class="form-group full-width">
+            <label>Informações Médicas / Adicionais</label>
+            <textarea name="informacoes_adicionais" rows="3" class="input-suave">{{ aluno.informacoes_adicionais if aluno else '' }}</textarea>
+        </div>
+
+        <div class="form-group full-width" style="display: flex; gap: 10px;">
+            <a href="{{ url_for('aluno_bp.index') }}" class="btn-secondary">Cancelar</a>
             <button type="submit" class="btn-primary">Salvar Aluno</button>
         </div>
+
     </form>
 </div>
 {% endblock %}

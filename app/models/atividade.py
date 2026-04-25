@@ -57,3 +57,15 @@ class Atividade:
         conn.execute('DELETE FROM atividades WHERE id = ?', (atividade_id,))
         conn.commit()
         conn.close()
+        
+    @staticmethod
+    def get_por_aluno(aluno_id):
+        """Busca atividades específicas cadastradas para o aluno."""
+        conn = get_db()
+        atividades = conn.execute('''
+            SELECT act.* FROM atividades act
+            JOIN aluno_atividades aa ON act.id = aa.atividade_id
+            WHERE aa.aluno_id = ?
+        ''', (aluno_id,)).fetchall()
+        conn.close()
+        return atividades

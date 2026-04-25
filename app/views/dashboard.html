@@ -1,63 +1,84 @@
 {% extends 'base.html' %}
-
 {% block page_title %}Dashboard Analítico{% endblock %}
-
 {% block content %}
-<div class="dashboard-header">
-    <div class="filter-box">
-        <label for="filtro_inicio">Data Inicial:</label>
-        <input type="date" id="filtro_inicio" class="input-suave">
-        
-        <label for="filtro_fim">Data Final:</label>
-        <input type="date" id="filtro_fim" class="input-suave">
-        
-        <button id="btnFiltrar" class="btn-primary">Filtrar Gráficos</button>
-    </div>
+
+<div class="top-header form-container">
+    <form method="GET" action="{{ url_for('dashboard_bp.index') }}" class="form-grid">
+        <div class="form-group">
+            <label>Data Inicial:</label>
+            <input type="date" id="filtro_inicio" name="data_inicio" class="input-suave">
+        </div>
+        <div class="form-group">
+            <label>Data Final:</label>
+            <input type="date" id="filtro_fim" name="data_fim" class="input-suave">
+        </div>
+        <div class="form-group full-width">
+            <button type="button" id="btnFiltrar" class="btn-primary">Filtrar Gráficos</button>
+        </div>
+    </form>
 </div>
 
 <div class="metrics-grid">
-    <div class="metric-card">
+    <div class="metric-card theme-atividade-border">
         <h3>Total de Alunos</h3>
-        <p class="metric-value">{{ total_alunos }}</p>
+        <div class="metric-value atividade-text">{{ total_alunos }}</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card theme-atividade-border">
         <h3>Atividades Registradas</h3>
-        <p class="metric-value">{{ total_atividades }}</p>
+        <div class="metric-value atividade-text">{{ total_atividades }}</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card theme-intercorrencia-border">
         <h3>Intercorrências</h3>
-        <p class="metric-value">{{ total_intercorrencias }}</p>
+        <div class="metric-value intercorrencia-text">{{ total_intercorrencias }}</div>
     </div>
-    <div class="metric-card atividade-theme">
+    <div class="metric-card theme-atividade-border">
         <h3>Média de Atividades</h3>
-        <p class="metric-value">{{ media_notas_atividades }} <small>/ 10</small></p>
+        <div class="metric-value atividade-text">{{ media_notas_atividades }} / 50</div>
     </div>
-    <div class="metric-card intercorrencia-theme">
+    <div class="metric-card theme-intercorrencia-border">
         <h3>Média Intercorrências</h3>
-        <p class="metric-value">{{ media_notas_intercorrencias }} <small>/ 10</small></p>
+        <div class="metric-value intercorrencia-text">{{ media_notas_intercorrencias }} / 50</div>
     </div>
 </div>
 
+{% if session.get('username') == 'admin' %}
+<div class="table-container" style="margin-bottom: 30px;">
+    <h3 style="margin-bottom: 15px; color: var(--primary-color);">🏆 Desempenho e Avaliação de Terapeutas</h3>
+    <table class="table-clean">
+        <thead>
+            <tr>
+                <th>Terapeuta</th>
+                <th>Alunos Vinculados</th>
+                <th>Média Geral das Atividades (Max 50)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prof in ranking_professores %}
+            <tr>
+                <td><strong>{{ prof.nome_completo }}</strong></td>
+                <td>{{ prof.total_alunos }}</td>
+                <td><span class="badge badge-atividade">{{ "%.2f"|format(prof.media_atv if prof.media_atv else 0) }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3">Nenhum dado de terapeuta disponível.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 <div class="charts-grid">
     <div class="chart-container">
-        <h4>1. Atividades por Data</h4>
+        <h4>1. Atividades por Data (Média Geral)</h4>
         <canvas id="chartAtividades"></canvas>
     </div>
     <div class="chart-container">
         <h4>2. Soma das Atividades por Data</h4>
         <canvas id="chartSomaAtividades"></canvas>
     </div>
-    <div class="chart-container">
-        <h4>3. Intercorrências por Data</h4>
-        <canvas id="chartIntercorrencias"></canvas>
-    </div>
-    <div class="chart-container">
-        <h4>4. Soma das Intercorrências</h4>
-        <canvas id="chartSomaIntercorrencias"></canvas>
-    </div>
 </div>
-{% endblock %}
 
+{% endblock %}
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% endblock %}

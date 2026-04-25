@@ -2,134 +2,94 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Relatório Analítico - TERA</title>
+    <title>Relatório Analítico TERA</title>
     <style>
-        @page {
-            size: A4 landscape;
-            margin: 1.5cm;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            color: #333; 
-            line-height: 1.5; 
-            margin: 20px 40px; 
-            background-color: #fff;
-        }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; line-height: 1.4; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; font-size: 24px; }
+        h2 { color: #34495e; font-size: 20px; margin-top: 30px; }
+        .info-panel { background-color: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .info-panel p { margin: 5px 0; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        th, td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
+        th { background-color: #34495e; color: white; }
+        .chart-img { width: 100%; max-width: 800px; height: auto; margin-top: 15px; border: 1px solid #ccc; }
         
-        .header { 
-            text-align: center; 
-            border-bottom: 2px solid #8da4d0; 
-            padding-bottom: 15px; 
-            margin-bottom: 25px; 
-        }
-        
-        .header h1 { margin: 0 0 5px 0; color: #2c3e50; }
-        
-        .info-panel { 
-            background-color: #f8fafc; 
-            padding: 15px; 
-            border-radius: 8px; 
-            margin-bottom: 20px; 
-            border: 1px solid #e2e8f0;
-            font-size: 0.95em;
-        }
-        
-        .info-panel p { margin: 5px 0; }
-        
-        .chart-section {
-            margin-bottom: 30px;
-            padding: 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: 400px !important;
-            display: block;
-        }
-
-        .actions-bar {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            color: white;
-            font-size: 0.95em;
-        }
-        .btn-pdf { background-color: #e53e3e; }
-        .btn-zap { background-color: #25D366; }
-        .btn-voltar { background-color: #64748b; }
-
-        @media print { 
-            .no-print { display: none !important; } 
-            body { margin: 0; }
-            .chart-section { border: none; padding: 0; }
-        }
+        /* Oculta os botões de ação se estiver renderizando pelo xhtml2pdf */
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
-    <form id="formPdf" method="POST" style="display: none;">
-        <input type="hidden" name="chart_image" id="chart_image_input">
-    </form>
-
-    <div class="actions-bar no-print">
-        <a href="javascript:history.back()" class="btn btn-voltar">⬅️ Voltar aos Filtros</a>
+    <div class="no-print" style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <a href="{{ url_for('exportacao_bp.index') }}" style="padding: 10px 15px; background: #95a5a6; color: white; text-decoration: none; border-radius: 5px;">⬅️ Voltar aos Filtros</a>
         
-        <button onclick="baixarPDF()" class="btn btn-pdf">⬇️ Baixar em PDF</button>
-        
-        <button onclick="copiarRelatorioGeralWhatsApp()" class="btn btn-zap">📱 Cópia para WhatsApp</button>
+        <form id="formPdf" method="POST" action="{{ url_for('exportacao_bp.gerar_relatorio', **request.args) }}" style="display: inline;">
+            <div id="hidden_inputs_container"></div>
+            <input type="hidden" name="enviar_email" value="{{ request.args.get('enviar_email', '') }}">
+            <input type="hidden" name="enviar_professor" value="{{ request.args.get('enviar_professor', '') }}">
+            <button type="button" onclick="baixarPDF()" style="padding: 10px 15px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">⬇️ Baixar em PDF ou Enviar E-mail</button>
+        </form>
     </div>
 
-    <div class="header">
-        <h1>📊 Sistema TERA - Relatório Analítico de Desempenho</h1>
-    </div>
-
+    <h1>📊 Sistema TERA - Relatório Analítico de Desempenho</h1>
+    
     <div class="info-panel">
         <p><strong>Gerado em:</strong> <span id="infoDataGeracao">{{ data_geracao }}</span></p>
         <p><strong>Filtros Aplicados:</strong> <span id="infoFiltros">{{ descricao_filtros }}</span></p>
-        <p><strong>Modo de Visualização:</strong> {{ 'Somatório Diário' if tipo_grafico == 'somatorio' else 'Linhas Separadas por Atividade/Intercorrência' }}</p>
     </div>
 
-    <div class="chart-section">
-        {% if chart_image %}
-            <img src="{{ chart_image }}" style="width: 100%; max-height: 500px;" alt="Gráfico de Desempenho">
-        {% else %}
-            <canvas id="relatorioChart"></canvas>
-            <div id="chartLegend" style="text-align: center; margin-top: 15px; font-size: 13px;"></div>
-        {% endif %}
-    </div>
-
-    <script>
-        const configGrafico = "{{ tipo_grafico }}";
-        const dadosBrutos = [
-            {% for l in lancamentos %}
-            {
-                data: "{{ l.data_lancamento }}",
-                aluno: "{{ l.aluno_nome }}",
-                terapeuta: "{{ l.professor_nome }}",
-                atividade: "{{ l.atividade_sigla or '' }}",
-                nota_atividade: {{ l.nota_atividade if l.nota_atividade is not none else 'null' }},
-                intercorrencia: "{{ l.intercorrencia_sigla or '' }}",
-                nota_intercorrencia: {{ l.nota_intercorrencia if l.nota_intercorrencia is not none else 'null' }}
-            },
+    {% if chart_images %}
+        {% for img in chart_images %}
+            <div style="page-break-after: always; text-align: center;">
+                <img src="{{ img }}" class="chart-img">
+            </div>
+        {% endfor %}
+    {% else %}
+        <div id="charts_wrapper">
+            {% for sigla, l_lista in lancamentos_por_atividade.items() %}
+            <div class="canvas-container" style="margin-bottom: 50px;">
+                <h2>Atividade Analisada: {{ sigla }}</h2>
+                <canvas class="relatorioChartCanvas" data-sigla="{{ sigla }}"></canvas>
+            </div>
+            {% else %}
+                <p>Nenhum dado encontrado para os filtros selecionados.</p>
             {% endfor %}
-        ];
-    </script>
-    
-    <script src="{{ url_for('static', filename='js/export.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/relatorio_geral.js') }}"></script>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        
+        <script>
+            // Dados brutos agrupados vindos do Python
+            const lancamentosAgrupados = {{ lancamentos_por_atividade | tojson | safe }};
+        </script>
+        <script src="{{ url_for('static', filename='js/relatorio_geral.js') }}"></script>
+    {% endif %}
+
+    <h2>Detalhamento dos Lançamentos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Terapeuta</th>
+                <th>Aluno</th>
+                <th>Atividade</th>
+                <th>Soma Notas (Atv)</th>
+                <th>Soma Notas (Intc)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in lancamentos_lista %}
+            <tr>
+                <td>{{ l.data_lancamento }}</td>
+                <td>{{ l.professor_nome }}</td>
+                <td>{{ l.aluno_nome }}</td>
+                <td>{{ l.atividade_sigla }}</td>
+                <td>{{ l.soma_atividades }} / 50</td>
+                <td>{{ l.soma_intercorrencias }} / 50</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </body>
 </html>

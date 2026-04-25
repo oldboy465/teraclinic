@@ -1,20 +1,53 @@
 {% extends 'base.html' %}
-
-{% block page_title %}Configuração Semântica - Modo Estrutural{% endblock %}
-
+{% block page_title %}Histórico de Lançamentos{% endblock %}
 {% block content %}
-<div class="form-container">
-    <div class="system-alert info-alert">
-        <h3>🔒 Edição Protegida por Regra de Negócio</h3>
-        <p>
-            De acordo com os requisitos estruturais do <strong>SISTEMA TERA</strong> (Módulo 5), as descrições semânticas das notas são blocos independentes e padronizados para garantir a consistência dos relatórios clínicos.
-        </p>
-        <p>
-            Para alterar a escala de 0 a 10, o Administrador do Sistema deve modificar diretamente o arquivo de núcleo: <code>app/models/nota.py</code>.
-        </p>
-    </div>
-    <div class="form-actions" style="margin-top: 20px;">
-        <a href="/notas" class="btn-primary">Voltar ao Guia de Notas</a>
-    </div>
+
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('lancamento_bp.create') }}" class="btn-primary">+ Registrar Novo Lançamento</a>
 </div>
+
+<div class="table-container">
+    <table class="table-clean">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Aluno</th>
+                <th>Professor</th>
+                <th>Atividade (Sigla)</th>
+                <th>Tot. Ativ.</th>
+                <th>Tot. Interc.</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lanc in lancamentos %}
+            <tr>
+                <td>{{ lanc.id }}</td>
+                <td>{{ lanc.data_lancamento }}</td>
+                <td><strong>{{ lanc.aluno_nome }}</strong></td>
+                <td>{{ lanc.professor_nome }}</td>
+                <td><span class="badge badge-atividade">{{ lanc.atividade_sigla }}</span></td>
+                <td>{{ lanc.soma_atividades }} / 50</td>
+                <td>{{ lanc.soma_intercorrencias }} / 50</td>
+                <td class="action-buttons" style="display: flex; gap: 5px;">
+                    {% if session.get('username') == 'admin' or session.get('user_id') == lanc.professor_id %}
+                        <a href="{{ url_for('lancamento_bp.edit', id=lanc.id) }}" class="btn-icon" title="Editar Lançamento">✏️</a>
+                        <form action="{{ url_for('lancamento_bp.delete', id=lanc.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este lançamento?');">
+                            <button type="submit" class="btn-icon" style="background-color: var(--danger-color); color: white; border: none;" title="Excluir">🗑️</button>
+                        </form>
+                    {% else %}
+                        <span class="muted-text" style="font-size: 0.8em;">Bloqueado</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8">Nenhum lançamento registrado no sistema.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}
