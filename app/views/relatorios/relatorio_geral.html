@@ -18,7 +18,8 @@
         th, td { border: 1px solid #bdc3c7; padding: 6px; text-align: left; }
         th { background-color: #34495e; color: white; text-transform: uppercase; font-size: 9px; }
         .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 30px; page-break-after: auto; }
-        .chart-img { width: 100%; max-height: 350px; object-fit: contain; }
+        /* CORREÇÃO: Removido o width: 100% para evitar o warning "getSize: Not a float '100%'" no terminal */
+        .chart-img { max-width: 800px; max-height: 350px; display: block; margin: 0 auto; object-fit: contain; }
         .no-print { display: block; margin-bottom: 20px; }
         @media print { .no-print { display: none !important; } }
     </style>

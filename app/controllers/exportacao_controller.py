@@ -82,12 +82,16 @@ def gerar_relatorio():
         'professor_id': request.args.get('professor_id') or request.form.get('professor_id'),
         'atividades_ids': request.args.getlist('atividades_ids') or request.form.getlist('atividades_ids')
     }
+    
     incluir_obs = request.args.get('incluir_obs') == 'true' or request.form.get('incluir_obs') == 'true'
+    
     if session.get('username') != 'admin':
         filtros['professor_id'] = session.get('user_id')
+        
     chart_images = []
     enviar_email = False
     enviar_para_professor = False
+    
     if request.method == 'POST':
         chart_images = request.form.getlist('chart_images[]')
         formato = 'pdf'
@@ -95,12 +99,14 @@ def gerar_relatorio():
         enviar_para_professor = request.form.get('enviar_professor') == 'true'
     else:
         formato = request.args.get('format', 'html')
+        
     lancamentos_brutos = Lancamento.get_relatorio_avancado(filtros)
     lancamentos = [dict(row) for row in lancamentos_brutos]
     data_geracao = datetime.datetime.now().strftime("%d/%m/%Y às %H:%M")
     filtros_aplicados = []
     aluno_selecionado = None
     prof_selecionado = None
+    
     if filtros['data_inicio'] and filtros['data_fim']:
         filtros_aplicados.append(f"Período: {filtros['data_inicio']} a {filtros['data_fim']}")
     if filtros['aluno_id']:
@@ -112,13 +118,16 @@ def gerar_relatorio():
     if filtros['atividades_ids']:
         nomes_atvs = [Atividade.get_by_id(aid)['sigla'] for aid in filtros['atividades_ids'] if Atividade.get_by_id(aid)]
         filtros_aplicados.append(f"Atividades: {', '.join(nomes_atvs)}")
+        
     descricao_filtros = " | ".join(filtros_aplicados) if filtros_aplicados else "Nenhum filtro aplicado (Visão Geral)"
+    
     lancamentos_por_atividade = {}
     for l in lancamentos:
         sigla = l['atividade_sigla'] or 'Sem Atividade'
         if sigla not in lancamentos_por_atividade:
             lancamentos_por_atividade[sigla] = []
         lancamentos_por_atividade[sigla].append(l)
+        
     html_content = render_template('relatorios/relatorio_geral.html',
                                    lancamentos_por_atividade=lancamentos_por_atividade,
                                    lancamentos_lista=lancamentos,
@@ -126,21 +135,34 @@ def gerar_relatorio():
                                    data_geracao=data_geracao,
                                    chart_images=chart_images,
                                    incluir_obs=incluir_obs)
-    if formato == 'pdf' or enviar_email:
+                                   
+    # Se o usuário marcou para enviar para QUALQUER um dos dois (Aluno ou Professor)
+    if formato == 'pdf' or enviar_email or enviar_para_professor:
         pdf_file = BytesIO()
         pisa_status = pisa.CreatePDF(html_content, dest=pdf_file)
+        
         if pisa_status.err:
             return "Erro ao gerar PDF", 500
+            
         pdf_bytes = pdf_file.getvalue()
-        if enviar_email and aluno_selecionado:
+        
+        # CORREÇÃO DA LÓGICA: Valida o disparo se qualquer um dos dois for True
+        if (enviar_email or enviar_para_professor) and aluno_selecionado:
             destinatarios = []
-            if aluno_selecionado['email']:
+            
+            # CORREÇÃO: Substituição de '.get()' pela sintaxe de chave de dicionário '[]' 
+            # já que o SQLite Row age como dicionário mas não implementa o método get.
+            if enviar_email and aluno_selecionado['email']:
                 destinatarios.append(aluno_selecionado['email'])
-            if enviar_para_professor and prof_selecionado and prof_selecionado['email']:
-                destinatarios.append(prof_selecionado['email'])
-            elif enviar_para_professor and session.get('username') != 'admin':
-                prof_logado = Professor.get_by_id(session.get('user_id'))
-                if prof_logado and prof_logado['email']: destinatarios.append(prof_logado['email'])
+                
+            if enviar_para_professor:
+                if prof_selecionado and prof_selecionado['email']:
+                    destinatarios.append(prof_selecionado['email'])
+                elif session.get('username') != 'admin':
+                    prof_logado = Professor.get_by_id(session.get('user_id'))
+                    if prof_logado and prof_logado['email']: 
+                        destinatarios.append(prof_logado['email'])
+                        
             if destinatarios:
                 sucesso = enviar_email_com_anexo(
                     destinatarios=destinatarios,
@@ -150,15 +172,17 @@ def gerar_relatorio():
                     nome_arquivo=f"Relatorio_{aluno_selecionado['nome'].replace(' ', '_')}.pdf"
                 )
                 if sucesso:
-                    flash('Relatório enviado por e-mail com sucesso!', 'success')
+                    flash('Relatório gerado e enviado por e-mail com sucesso!', 'success')
                 else:
-                    flash('Erro ao enviar e-mail. Verifique as configurações.', 'danger')
+                    flash('PDF gerado, mas ocorreu um erro ao enviar o e-mail. Verifique o terminal.', 'danger')
                 return redirect(url_for('exportacao_bp.index'))
             else:
-                flash('Nenhum e-mail de destinatário encontrado.', 'warning')
+                flash('PDF gerado, mas nenhum e-mail de destinatário foi encontrado nos cadastros.', 'warning')
                 return redirect(url_for('exportacao_bp.index'))
+                
         response = make_response(pdf_bytes)
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = 'inline; filename=relatorio_analitico_tera.pdf'
         return response
+        
     return html_content

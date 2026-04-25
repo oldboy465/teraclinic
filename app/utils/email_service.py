@@ -11,11 +11,12 @@ def enviar_email_com_anexo(destinatarios, assunto, corpo, pdf_bytes, nome_arquiv
     Função utilitária para envio seguro de e-mails usando SMTP e TLS.
     Requer configuração do .env com EMAIL_USER e EMAIL_PASS.
     """
-    EMAIL_ADDRESS = os.environ.get('EMAIL_USER', 'cienciaegestao@gmail.com')
-    EMAIL_PASSWORD = os.environ.get('EMAIL_PASS', '') # Coloque a senha de app aqui no .env depois
+    # Puxando dinamicamente do arquivo .env
+    EMAIL_ADDRESS = os.environ.get('EMAIL_USER')
+    EMAIL_PASSWORD = os.environ.get('EMAIL_PASS')
     
-    if not EMAIL_PASSWORD:
-        print("❌ Senha do e-mail não configurada no ambiente.")
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print("❌ E-mail ou Senha não configurados no ambiente (.env).")
         return False
 
     try:
